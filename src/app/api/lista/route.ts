@@ -1,4 +1,3 @@
-
 type Lista = {
   descricao: string;
   data: string;

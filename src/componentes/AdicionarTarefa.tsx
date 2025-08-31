@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-type Lista =  { descricao: string; data: Date; status: number; prioridade: string };
+type Lista =  { descricao: string; data: Date; status: string; prioridade: string };
 
 export default function AdicionarTarefa() {
   const [prioridade, setPrioridade] = useState('');
@@ -15,21 +15,20 @@ export default function AdicionarTarefa() {
   }, []);
 
   async function carregarTarefas() {
-    const response = await fetch('/api/lista');
-    console.log(data)
+    const response = await fetch('/api/lista_api');
     if (response.ok) {
-      const data: { lista: { descricao: string; data: string; status: number; prioridade: string; }[] } = await response.json();
+      const data: { lista: { descricao: string; data: string; status: string; prioridade: string; }[] } = await response.json();
       const listaConvertida: Lista[] = data.lista.map((item) => ({
         ...item,
         data: new Date(item.data),
       }));
-      console.log({data, listaConvertida})
       setLista(listaConvertida);
     }
   }
 
   async function adicionarTarefa(e: React.FormEvent) {
     e.preventDefault();
+
     if (!descricao.trim() || !prioridade.trim() || !data.trim()) return;
 
 
@@ -41,7 +40,7 @@ export default function AdicionarTarefa() {
     }
     console.log(data)
     console.log(novaTarefa)
-    const response = await fetch('/api/lista', {
+    const response = await fetch('/api/lista_api', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ novaTarefa })
@@ -56,32 +55,32 @@ export default function AdicionarTarefa() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <form onSubmit={adicionarTarefa} className="flex gap-2">
+    <div className="flex flex-col justify-items-center gap-4 p-4">
+      <form onSubmit={adicionarTarefa} className="flex gap-2 bg-white p-3 rounded-2xl">
         <input
           type="text"
           value={descricao}
           onChange={(e) => setDescricao(e.target.value)}
           placeholder="Digite uma nova tarefa"
-          className="border p-2 rounded w-full text-black bg-white"
+          className="p-2 rounded text-gray-500"
         />
         <input
           type="Date"
           value={data}
           onChange={(e) => setData(e.target.value)}
-          className="border p-2 rounded w-full text-black bg-white"
+          className="p-1 rounded bg-gray-200 text-gray-500"
         />
         <select
           value={prioridade}
           onChange={(e) => setPrioridade(e.target.value)}
-          className='border-2 p-2 rounded-md w-full text-black bg-white'
+          className='p-2 rounded-md bg-gray-200 text-gray-500'
         >
           <option value="baixa">Baixa</option>
           <option value="media">Média</option>
           <option value="alta">Alta</option>
         </select>
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
-          Adicionar
+        <button type="submit" className="bg-gray-200 text-gray-500 px-4 py-2 rounded-2xl">
+          +
         </button>
       </form>
       <ul className="flex flex-col gap-2">
