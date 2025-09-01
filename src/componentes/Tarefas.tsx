@@ -1,4 +1,4 @@
-import type { Lista } from "@/app/type/type";
+import type { Lista } from "@/type/type";
 
 type Props = {lista: Lista}
 

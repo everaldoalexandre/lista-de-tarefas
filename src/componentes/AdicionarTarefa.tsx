@@ -85,8 +85,12 @@ export default function AdicionarTarefa() {
       </form>
       <ul className="flex flex-col gap-2">
         {lista.map((novaTarefa, index) => (
-          <li key={index} className="border p-2 rounded bg-gray-50 text-black">
-            {novaTarefa.descricao} {novaTarefa.prioridade} {novaTarefa.data.toLocaleDateString('pt-BR', {timeZone: 'America/Sao_Paulo'})}
+          <li key={index} className="p-2 rounded bg-white text-black flex justify-between items-center">
+            <span className="w-7/10 break-words">{novaTarefa.descricao}</span>
+            <span className="w-1/10 text-center">{novaTarefa.prioridade}</span>
+            <span className="w-2/10 text-right">
+              {novaTarefa.data.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+            </span>
           </li>
         ))}
       </ul>
