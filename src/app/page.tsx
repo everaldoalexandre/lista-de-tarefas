@@ -12,7 +12,8 @@ export default function Home() {
           <AdicionarTarefa/>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
+      <footer className="text-gray-500 font-bold row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
+        <h2>Everaldo Alexandre - 2025</h2>
       </footer>
     </div>
   );

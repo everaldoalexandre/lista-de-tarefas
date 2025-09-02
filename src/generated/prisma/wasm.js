@@ -124,8 +124,7 @@ exports.Prisma.ListaScalarFieldEnum = {
   id: 'id',
   descricao: 'descricao',
   data: 'data',
-  status: 'status',
-  prioridade: 'prioridade'
+  status: 'status'
 };
 
 exports.Prisma.SortOrder = {

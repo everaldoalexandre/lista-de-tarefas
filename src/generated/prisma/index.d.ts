@@ -881,7 +881,6 @@ export namespace Prisma {
     descricao: string | null
     data: Date | null
     status: string | null
-    prioridade: string | null
   }
 
   export type ListaMaxAggregateOutputType = {
@@ -889,7 +888,6 @@ export namespace Prisma {
     descricao: string | null
     data: Date | null
     status: string | null
-    prioridade: string | null
   }
 
   export type ListaCountAggregateOutputType = {
@@ -897,7 +895,6 @@ export namespace Prisma {
     descricao: number
     data: number
     status: number
-    prioridade: number
     _all: number
   }
 
@@ -915,7 +912,6 @@ export namespace Prisma {
     descricao?: true
     data?: true
     status?: true
-    prioridade?: true
   }
 
   export type ListaMaxAggregateInputType = {
@@ -923,7 +919,6 @@ export namespace Prisma {
     descricao?: true
     data?: true
     status?: true
-    prioridade?: true
   }
 
   export type ListaCountAggregateInputType = {
@@ -931,7 +926,6 @@ export namespace Prisma {
     descricao?: true
     data?: true
     status?: true
-    prioridade?: true
     _all?: true
   }
 
@@ -1026,7 +1020,6 @@ export namespace Prisma {
     descricao: string
     data: Date
     status: string
-    prioridade: string
     _count: ListaCountAggregateOutputType | null
     _avg: ListaAvgAggregateOutputType | null
     _sum: ListaSumAggregateOutputType | null
@@ -1053,7 +1046,6 @@ export namespace Prisma {
     descricao?: boolean
     data?: boolean
     status?: boolean
-    prioridade?: boolean
   }, ExtArgs["result"]["lista"]>
 
   export type ListaSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -1061,7 +1053,6 @@ export namespace Prisma {
     descricao?: boolean
     data?: boolean
     status?: boolean
-    prioridade?: boolean
   }, ExtArgs["result"]["lista"]>
 
   export type ListaSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -1069,7 +1060,6 @@ export namespace Prisma {
     descricao?: boolean
     data?: boolean
     status?: boolean
-    prioridade?: boolean
   }, ExtArgs["result"]["lista"]>
 
   export type ListaSelectScalar = {
@@ -1077,10 +1067,9 @@ export namespace Prisma {
     descricao?: boolean
     data?: boolean
     status?: boolean
-    prioridade?: boolean
   }
 
-  export type ListaOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "descricao" | "data" | "status" | "prioridade", ExtArgs["result"]["lista"]>
+  export type ListaOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "descricao" | "data" | "status", ExtArgs["result"]["lista"]>
 
   export type $ListaPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Lista"
@@ -1090,7 +1079,6 @@ export namespace Prisma {
       descricao: string
       data: Date
       status: string
-      prioridade: string
     }, ExtArgs["result"]["lista"]>
     composites: {}
   }
@@ -1518,7 +1506,6 @@ export namespace Prisma {
     readonly descricao: FieldRef<"Lista", 'String'>
     readonly data: FieldRef<"Lista", 'DateTime'>
     readonly status: FieldRef<"Lista", 'String'>
-    readonly prioridade: FieldRef<"Lista", 'String'>
   }
     
 
@@ -1903,8 +1890,7 @@ export namespace Prisma {
     id: 'id',
     descricao: 'descricao',
     data: 'data',
-    status: 'status',
-    prioridade: 'prioridade'
+    status: 'status'
   };
 
   export type ListaScalarFieldEnum = (typeof ListaScalarFieldEnum)[keyof typeof ListaScalarFieldEnum]
@@ -1998,7 +1984,6 @@ export namespace Prisma {
     descricao?: StringFilter<"Lista"> | string
     data?: DateTimeFilter<"Lista"> | Date | string
     status?: StringFilter<"Lista"> | string
-    prioridade?: StringFilter<"Lista"> | string
   }
 
   export type ListaOrderByWithRelationInput = {
@@ -2006,7 +1991,6 @@ export namespace Prisma {
     descricao?: SortOrder
     data?: SortOrder
     status?: SortOrder
-    prioridade?: SortOrder
   }
 
   export type ListaWhereUniqueInput = Prisma.AtLeast<{
@@ -2017,7 +2001,6 @@ export namespace Prisma {
     descricao?: StringFilter<"Lista"> | string
     data?: DateTimeFilter<"Lista"> | Date | string
     status?: StringFilter<"Lista"> | string
-    prioridade?: StringFilter<"Lista"> | string
   }, "id">
 
   export type ListaOrderByWithAggregationInput = {
@@ -2025,7 +2008,6 @@ export namespace Prisma {
     descricao?: SortOrder
     data?: SortOrder
     status?: SortOrder
-    prioridade?: SortOrder
     _count?: ListaCountOrderByAggregateInput
     _avg?: ListaAvgOrderByAggregateInput
     _max?: ListaMaxOrderByAggregateInput
@@ -2041,14 +2023,12 @@ export namespace Prisma {
     descricao?: StringWithAggregatesFilter<"Lista"> | string
     data?: DateTimeWithAggregatesFilter<"Lista"> | Date | string
     status?: StringWithAggregatesFilter<"Lista"> | string
-    prioridade?: StringWithAggregatesFilter<"Lista"> | string
   }
 
   export type ListaCreateInput = {
     descricao: string
     data: Date | string
     status: string
-    prioridade: string
   }
 
   export type ListaUncheckedCreateInput = {
@@ -2056,14 +2036,12 @@ export namespace Prisma {
     descricao: string
     data: Date | string
     status: string
-    prioridade: string
   }
 
   export type ListaUpdateInput = {
     descricao?: StringFieldUpdateOperationsInput | string
     data?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
-    prioridade?: StringFieldUpdateOperationsInput | string
   }
 
   export type ListaUncheckedUpdateInput = {
@@ -2071,7 +2049,6 @@ export namespace Prisma {
     descricao?: StringFieldUpdateOperationsInput | string
     data?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
-    prioridade?: StringFieldUpdateOperationsInput | string
   }
 
   export type ListaCreateManyInput = {
@@ -2079,14 +2056,12 @@ export namespace Prisma {
     descricao: string
     data: Date | string
     status: string
-    prioridade: string
   }
 
   export type ListaUpdateManyMutationInput = {
     descricao?: StringFieldUpdateOperationsInput | string
     data?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
-    prioridade?: StringFieldUpdateOperationsInput | string
   }
 
   export type ListaUncheckedUpdateManyInput = {
@@ -2094,7 +2069,6 @@ export namespace Prisma {
     descricao?: StringFieldUpdateOperationsInput | string
     data?: DateTimeFieldUpdateOperationsInput | Date | string
     status?: StringFieldUpdateOperationsInput | string
-    prioridade?: StringFieldUpdateOperationsInput | string
   }
 
   export type IntFilter<$PrismaModel = never> = {
@@ -2139,7 +2113,6 @@ export namespace Prisma {
     descricao?: SortOrder
     data?: SortOrder
     status?: SortOrder
-    prioridade?: SortOrder
   }
 
   export type ListaAvgOrderByAggregateInput = {
@@ -2151,7 +2124,6 @@ export namespace Prisma {
     descricao?: SortOrder
     data?: SortOrder
     status?: SortOrder
-    prioridade?: SortOrder
   }
 
   export type ListaMinOrderByAggregateInput = {
@@ -2159,7 +2131,6 @@ export namespace Prisma {
     descricao?: SortOrder
     data?: SortOrder
     status?: SortOrder
-    prioridade?: SortOrder
   }
 
   export type ListaSumOrderByAggregateInput = {

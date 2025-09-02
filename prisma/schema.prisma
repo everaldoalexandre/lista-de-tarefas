@@ -19,5 +19,4 @@ model Lista {
   descricao  String
   data       DateTime
   status     String
-  prioridade String
 }
