@@ -124,7 +124,8 @@ exports.Prisma.ListaScalarFieldEnum = {
   id: 'id',
   descricao: 'descricao',
   data: 'data',
-  status: 'status'
+  status: 'status',
+  ordem: 'ordem'
 };
 
 exports.Prisma.SortOrder = {
@@ -135,6 +136,11 @@ exports.Prisma.SortOrder = {
 exports.Prisma.QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
+};
+
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
 };
 
 

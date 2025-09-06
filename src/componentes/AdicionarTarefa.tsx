@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import {Xdelete, EditIcon} from './Lucide';
+import { DragDropContext, Draggable, Droppable, DropResult } from '@hello-pangea/dnd'
 
 type Lista =  { id: number, descricao: string; data: Date; status: string };
 
@@ -9,11 +10,11 @@ export default function AdicionarTarefa() {
   const [lista, setLista] = useState<Lista[]>([]);
   const [descricao, setDescricao] = useState('');
   const [data, setData] = useState('');
-  const [showModalDelete, setShowModalDelete] = useState(false);
-  const [showModalAdd, setShowModalAdd] = useState(false);
   const [progress, setProgress] = useState(0);
   const [tarefaSelecionada, setTarefaSelecionada] = useState<Lista | null>(null);
-
+  
+  const [showModalDelete, setShowModalDelete] = useState(false);
+  const [showModalAdd, setShowModalAdd] = useState(false);
   const [showModalEdit, setShowModalEdit] = useState(false);
   const [tarefaEditando, setTarefaEditando] = useState<Lista | null>(null);
   const [descricaoEdit, setDescricaoEdit] = useState('');
@@ -48,22 +49,35 @@ export default function AdicionarTarefa() {
         throw new Error('Erro ao atualizar tarefa');
       }
 
-      carregarTarefas(); // recarrega a lista do banco
+      carregarTarefas();
     } catch (error) {
       alert(error);
     }
   }
 
+  async function handleOnDragEnd(result: DropResult){
+    if (!result.destination) return;
 
-  // ORDENAR AS TAREFAS
-  function ordenarLista(lista: Lista[]): Lista[] {
-    return lista.sort((a, b) => {
-   
-      if (a.status !== b.status) 
-        return a.status === 'pendente' ? -1 : 1;
-      
-      return a.data.getTime() - b.data.getTime();
-    });
+    const novaLista = Array.from(lista);
+    const [reordenada] = novaLista.splice(result.source.index, 1);
+    novaLista.splice(result.destination.index, 0, reordenada);
+
+    setLista(novaLista);
+
+    try {
+      const ordem = novaLista.map(tarefa => tarefa.id);
+
+      await fetch('/api/lista_api', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json'},
+        body: JSON.stringify({ordem}),
+        
+      });
+    }catch (error) {
+      console.error('Erro ao salvar nova ordem:', error);
+      alert('Não foi possível salvar a nova ordem. Recarregue a página.');
+      carregarTarefas();
+    }
   }
 
   // MARCAR TAREFA COMO CONCLUIDA
@@ -111,16 +125,20 @@ export default function AdicionarTarefa() {
   }
 
   async function carregarTarefas() {
+
     const response = await fetch('/api/lista_api');
+
     if (response.ok) {
-      const data: { lista: { id: number, descricao: string; data: string; status: string; }[] } = await response.json();
+      const data: { lista: { id: number, descricao: string; data: string; status: string; ordem: number;}[] } = await response.json();
+
       const listaConvertida: Lista[] = data.lista.map((item) => ({
         ...item,
         data: new Date(item.data),
       }));
-      
-      const listaOrdenada = ordenarLista(listaConvertida);
-      setLista(listaOrdenada);
+
+      setLista(listaConvertida);
+    } else{
+      console.error('Erro ao carregar tarefas', response.statusText);
     }
   }
 
@@ -130,15 +148,15 @@ export default function AdicionarTarefa() {
   setProgress(0);
 
   let width = 0;
-  const interval = setInterval(() => {
-    width += 1; 
-    setProgress(width);
-    if (width >= 100) {
-      clearInterval(interval);
-      setShowModalAdd(false);
-    }
-  }, 30);
-}
+    const interval = setInterval(() => {
+      width += 1; 
+      setProgress(width);
+      if (width >= 100) {
+        clearInterval(interval);
+        setShowModalAdd(false);
+      }
+    }, 30);
+  }
 
   async function adicionarTarefa(e: React.FormEvent) {
     e.preventDefault();
@@ -153,15 +171,13 @@ export default function AdicionarTarefa() {
     return;
     }
 
-
     try {
       const novaTarefa = {
         descricao: descricao.trim(),
         status: 'pendente',
-        data: new Date(data + 'T00:00:00-03:00').toISOString()
+        data: new Date(data + 'T00:00:00-03:00').toISOString(),
+        oredem: 1
       };
-
-      console.log('Enviando:', { novaTarefa }); 
 
       const response = await fetch('/api/lista_api', {
         method: 'POST',
@@ -170,7 +186,6 @@ export default function AdicionarTarefa() {
       });
 
       const result = await response.json();
-      console.log('Resposta:', result); 
 
       if (response.ok) {
         setDescricao('');
@@ -207,27 +222,44 @@ export default function AdicionarTarefa() {
           +
         </button>
       </form>
-      <ul className="flex flex-col gap-2 w-full max-w-4xl mx-auto">
-        {lista.map((novaTarefa, id) => {
-          return (
-            <li key={id} className={`grid grid-cols-[40px_2fr_100px_40px_40px] items-center gap-2 p-2 rounded transition-all duration-3 ${novaTarefa.status === 'concluido' ? 'bg-gray-200 text-gray-500 line-through' : 'bg-white text-black'}`}>
-              <input type="checkbox" className="w-5 h5 accent-gray-600" checked={novaTarefa.status === 'concluido'}
-                onChange={() => marcarTarefa(id)} />
-              <span className="break-all">{novaTarefa.descricao}</span>
-              <span className="text-right">
-                {novaTarefa.data.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
-              </span>
-              <button
-                className='bg-white text-gray-500 rounded hover:bg-gray-200 justify-items-center'
-                onClick={() => abrirModalEditar(novaTarefa)}
-              >
-                <EditIcon/>
-              </button>
-              <button className='bg-white text-gray-500 rounded hover:bg-gray-200 justify-items-center' onClick={() => confirmarDelete(novaTarefa)}> <Xdelete /></button>
-            </li>
-          );
-        })}
-      </ul>
+
+      <DragDropContext onDragEnd={handleOnDragEnd}>
+        <Droppable droppableId="tarefas">
+          {(provided) => (
+            <ul 
+            {...provided.droppableProps} 
+            ref={provided.innerRef} 
+            className="flex flex-col gap-2 w-full max-w-4xl mx-auto">
+              {lista.map((novaTarefa, id) => (
+                <Draggable key={novaTarefa.id} draggableId={String(novaTarefa.id)} index={id}>
+                  {(provided) => (
+                    <li
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      className={`grid grid-cols-[40px_2fr_100px_40px_40px] items-center gap-2 p-2 rounded transition-all duration-300 ${novaTarefa.status === 'concluido' ? 'bg-gray-200 text-gray-500 line-through' : 'bg-white text-black'}`}>
+                        <input type="checkbox" className="w-5 h5 accent-gray-600" checked={novaTarefa.status === 'concluido'}
+                          onChange={() => marcarTarefa(id)} />
+                        <span className="break-all">{novaTarefa.descricao}</span>
+                        <span className="text-right">
+                          {novaTarefa.data.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+                        </span>
+                        <button
+                          className='bg-white text-gray-500 rounded hover:bg-gray-200 justify-items-center'
+                          onClick={() => abrirModalEditar(novaTarefa)}
+                        >
+                          <EditIcon/>
+                        </button>
+                        <button className='bg-white text-gray-500 rounded hover:bg-gray-200 justify-items-center' onClick={() => confirmarDelete(novaTarefa)}> <Xdelete /></button>
+                    </li>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </ul>
+          )}
+        </Droppable>
+      </DragDropContext>
       {showModalDelete && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-50 bg-opacity-40 z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">

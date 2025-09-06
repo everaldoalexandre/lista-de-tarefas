@@ -6,7 +6,8 @@ const userData: Prisma.ListaCreateInput[] = [
   {
     descricao: 'Assistir aula',
     data: '',
-    status: 'pendente'
+    status: 'pendente',
+    ordem: 1
   }
 ];
 

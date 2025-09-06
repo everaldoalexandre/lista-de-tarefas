@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
     "@prisma/client": "^6.15.0",
     "@prisma/extension-accelerate": "^2.0.2",
     "lucide-react": "^0.542.0",
@@ -20,7 +21,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@next/swc-win32-x64-msvc": "^15.5.2",
-    "@tailwindcss/postcss": "^4",
+    "@tailwindcss/postcss": "^4.1.13",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -29,7 +30,7 @@
     "eslint-config-next": "15.5.2",
     "postcss": "^8.5.6",
     "prisma": "^6.15.0",
-    "tailwindcss": "^4.1.12",
+    "tailwindcss": "^4.1.13",
     "tsx": "^4.20.5",
     "typescript": "^5"
   }

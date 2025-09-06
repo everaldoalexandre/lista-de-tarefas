@@ -5,6 +5,7 @@ interface UpdateData {
   status?: string;
   descricao?: string;
   data?: Date;
+  ordem?: number;
 }
 
 function isPrismaError(error: unknown): error is { code: string; message: string } {
@@ -16,13 +17,24 @@ function isPrismaError(error: unknown): error is { code: string; message: string
 
 export async function GET() {
   try {
-    const lista = await prisma.lista.findMany();
-    return NextResponse.json({lista});
+
+    const lista = await prisma.lista.findMany({
+      orderBy: {ordem: 'asc'}
+    });
+
+    const listaFinal = lista.map((tarefa, index) => ({
+      ...tarefa,
+      ordem: tarefa.ordem ?? index,
+    }));
+
+    return NextResponse.json({lista: listaFinal});
   } catch (error) {
     console.error('Erro ao buscar tarefas:', error);
     return NextResponse.json({ error: 'Erro ao buscar tarefas' }, { status: 500 });
   }
 }
+
+//POST
 
 export async function POST(request: Request) {
   try {
@@ -58,7 +70,8 @@ export async function POST(request: Request) {
       data: { 
         status: 'pendente', 
         descricao: novaTarefa.descricao.trim(), 
-        data: dataValida
+        data: dataValida,
+        ordem: await prisma.lista.count()
       }
     });
 
@@ -80,6 +93,8 @@ export async function POST(request: Request) {
     }, { status: 500 });
   }
 }
+
+//DELETE
 
 export async function DELETE(request: Request) {
   try {
@@ -106,9 +121,27 @@ export async function DELETE(request: Request) {
   }
 }
 
+//PUT
+
 export async function PUT(request: Request) {
   try {
-    const { id, status, descricao, data } = await request.json();
+    const body = await request.json();
+
+    if (body.ordem && Array.isArray(body.ordem)){
+      const {ordem} = body;
+
+      await Promise.all(
+        ordem.map((id:number, index: number) => 
+          prisma.lista.update({
+            where: {id},
+            data: {ordem: index},
+          })
+        )
+      );
+      return NextResponse.json({message: 'Ordem atualizada com sucesso!'});
+    }
+
+    const { id, status, descricao, data } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID é obrigatório' }, { status: 400 });
