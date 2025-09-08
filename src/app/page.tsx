@@ -1,5 +1,5 @@
-import AdicionarTarefa from "@/componentes/AdicionarTarefa";
-import DataAtual from "@/componentes/DataAtual";
+import AdicionarTarefa from "@/components/AdicionarTarefa";
+import DataAtual from "@/components/DataAtual";
 
 export default function Home() {
   return (

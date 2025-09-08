@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {Xdelete, EditIcon} from './Lucide';
+import {Xdelete, EditIcon} from '../components/Lucide';
 import { DragDropContext, Draggable, Droppable, DropResult } from '@hello-pangea/dnd'
 
 type Lista =  { id: number, descricao: string; data: Date; status: string };
@@ -14,6 +14,7 @@ export default function AdicionarTarefa() {
   const [tarefaSelecionada, setTarefaSelecionada] = useState<Lista | null>(null);
   
   const [showModalDelete, setShowModalDelete] = useState(false);
+  const [showModalAddTarefa, setShowModalAddTarefa] = useState(false);
   const [showModalAdd, setShowModalAdd] = useState(false);
   const [showModalEdit, setShowModalEdit] = useState(false);
   const [tarefaEditando, setTarefaEditando] = useState<Lista | null>(null);
@@ -156,13 +157,28 @@ export default function AdicionarTarefa() {
         setShowModalAdd(false);
       }
     }, 30);
+  }  
+  
+  function abrirModalAdd2() {
+  setShowModalAddTarefa(true);
+  setProgress(0);
+
+  let width = 0;
+    const interval = setInterval(() => {
+      width += 1; 
+      setProgress(width);
+      if (width >= 100) {
+        clearInterval(interval);
+        setShowModalAddTarefa(false);
+      }
+    }, 30);
   }
 
   async function adicionarTarefa(e: React.FormEvent) {
     e.preventDefault();
 
     if (!descricao.trim()) {
-      alert('Por favor, digite uma descrição para a tarefa');
+      abrirModalAdd2();
     return;
     }
   
@@ -191,7 +207,6 @@ export default function AdicionarTarefa() {
         setDescricao('');
         setData('');
         await carregarTarefas();
-        setShowModalAdd(true);
         abrirModalAdd();
       } else {
         alert(result.error || 'Erro ao adicionar tarefa');
@@ -222,7 +237,7 @@ export default function AdicionarTarefa() {
           +
         </button>
       </form>
-
+      
       <DragDropContext onDragEnd={handleOnDragEnd}>
         <Droppable droppableId="tarefas">
           {(provided) => (
@@ -237,7 +252,7 @@ export default function AdicionarTarefa() {
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={`grid grid-cols-[40px_2fr_100px_40px_40px] items-center gap-2 p-2 rounded transition-all duration-300 ${novaTarefa.status === 'concluido' ? 'bg-gray-200 text-gray-500 line-through' : 'bg-white text-black'}`}>
+                      className={`grid grid-cols-[40px_2fr_100px_40px_40px] items-center gap-2 p-2 rounded ${novaTarefa.status === 'concluido' ? 'bg-gray-200 text-gray-500 line-through' : 'bg-white text-black'}`}>
                         <input type="checkbox" className="w-5 h5 accent-gray-600" checked={novaTarefa.status === 'concluido'}
                           onChange={() => marcarTarefa(id)} />
                         <span className="break-all">{novaTarefa.descricao}</span>
@@ -284,15 +299,26 @@ export default function AdicionarTarefa() {
         </div>
       )}
       {showModalAdd && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
+        <div className="fixed inset-0 w-full flex items-start justify-end z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-fit shadow-lg">
             <h2 className="text-lg text-gray-500 font-bold mb-4">Tarefa Adicionada!</h2>            
             <div
-              className="h-1 bg-green-500 transition-all duration-75"
+              className="h-1 bg-green-500 transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
           </div>  
         </div>
+      )}
+      {showModalAddTarefa && (
+        <div className="fixed inset-0 w-full flex items-start justify-end z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-fit shadow-lg">
+            <h2 className="text-lg text-gray-500 font-bold mb-4">Adicione uma descrição para tarefa!</h2>
+            <div
+              className="h-1 bg-green-500 transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>  
       )}
       {showModalEdit && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
