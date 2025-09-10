@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import {Xdelete, EditIcon} from '../components/Lucide';
 import { DragDropContext, Draggable, Droppable, DropResult } from '@hello-pangea/dnd'
 import {useSession} from "@/lib/auth-client"
+import { toast } from "sonner"
 
 type Lista =  { id: number, descricao: string; data: Date; status: string; userId: string };
 
@@ -15,7 +16,6 @@ export default function AdicionarTarefa() {
   const [tarefaSelecionada, setTarefaSelecionada] = useState<Lista | null>(null);
   
   const [showModalDelete, setShowModalDelete] = useState(false);
-  const [showModalAddTarefa, setShowModalAddTarefa] = useState(false);
   const [showModalAdd, setShowModalAdd] = useState(false);
   const [showModalEdit, setShowModalEdit] = useState(false);
   const [tarefaEditando, setTarefaEditando] = useState<Lista | null>(null);
@@ -48,6 +48,8 @@ export default function AdicionarTarefa() {
         }),
       });
 
+      toast.success("Tarefa editada!")
+
       if (!response.ok) {
         throw new Error('Erro ao atualizar tarefa');
       }
@@ -78,7 +80,7 @@ export default function AdicionarTarefa() {
       });
     }catch (error) {
       console.error('Erro ao salvar nova ordem:', error);
-      alert('Não foi possível salvar a nova ordem. Recarregue a página.');
+      toast.error('Não foi possível salvar a nova ordem. Recarregue a página.');
       carregarTarefas();
     }
   }
@@ -95,12 +97,13 @@ export default function AdicionarTarefa() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: tarefa.id, status: tarefa.status }),
     }).catch(() => {
-      alert('Erro ao atualizar status');
+      toast.error('Erro ao atualizar status');
 
       const revertLista = [...novaLista];
       revertLista[id].status = revertLista[id].status === 'pendente' ? 'concluido' : 'pendente';
       setLista(revertLista);
     });
+
     carregarTarefas();
   }
 
@@ -117,13 +120,14 @@ export default function AdicionarTarefa() {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id: tarefaSelecionada.id }),
   });
+  toast.success("Tarefa deletada!")
 
   if (response.ok) {
     setShowModalDelete(false);
     setTarefaSelecionada(null);
     carregarTarefas();
     } else {
-      alert('Erro ao deletar tarefa');
+      toast.error('Erro ao deletar tarefa');
     }
   }
 
@@ -147,7 +151,7 @@ export default function AdicionarTarefa() {
 
   //MODAL DE TAREFA ADICIONADA
   function abrirModalAdd() {
-  setShowModalAdd(true);
+  toast.success("Tarefa adicionada!")
   setProgress(0);
 
   let width = 0;
@@ -160,21 +164,6 @@ export default function AdicionarTarefa() {
       }
     }, 30);
   }  
-  
-  function abrirModalAdd2() {
-  setShowModalAddTarefa(true);
-  setProgress(0);
-
-  let width = 0;
-    const interval = setInterval(() => {
-      width += 1; 
-      setProgress(width);
-      if (width >= 100) {
-        clearInterval(interval);
-        setShowModalAddTarefa(false);
-      }
-    }, 30);
-  }
 
   const {data: session, isPending} = useSession()
 
@@ -182,22 +171,17 @@ export default function AdicionarTarefa() {
     e.preventDefault();
 
     if (isPending) {
-      alert('Verificando autenticação...');
+      toast.success('Verificando autenticação...');
       return;
     }
 
     if (!session?.user?.id) {
-      alert('Usuário não autenticado');
+      toast.error('Usuário não autenticado');
       return;
-    }
-
-    if (!descricao.trim()) {
-      abrirModalAdd2();
-    return;
     }
   
     if (!data.trim()) {
-      alert('Por favor, selecione uma data');
+      toast.error("Por favor, preencha todos os campos.")
     return;
     }
 
@@ -229,7 +213,7 @@ export default function AdicionarTarefa() {
       
     } catch (error) {
       console.error('Erro na requisição:', error);
-      alert('Erro de conexão. Tente novamente.');
+      toast.error('Erro de conexão. Tente novamente.');
     }
   }
     return (
@@ -323,17 +307,6 @@ export default function AdicionarTarefa() {
             />
           </div>  
         </div>
-      )}
-      {showModalAddTarefa && (
-        <div className="fixed inset-0 w-full flex items-start justify-end z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-fit shadow-lg">
-            <h2 className="text-lg text-gray-500 font-bold mb-4">Adicione uma descrição para tarefa!</h2>
-            <div
-              className="h-1 bg-green-500 transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>  
       )}
       {showModalEdit && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
