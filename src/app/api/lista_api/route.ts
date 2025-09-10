@@ -1,11 +1,17 @@
-import prisma from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { PrismaClient } from '@/generated/prisma';
+import { headers } from "next/headers";
 import { NextResponse } from 'next/server';
+
+const prisma = new PrismaClient();
+
 
 interface UpdateData {
   status?: string;
   descricao?: string;
   data?: Date;
   ordem?: number;
+  userId?: string;
 }
 
 function isPrismaError(error: unknown): error is { code: string; message: string } {
@@ -16,9 +22,23 @@ function isPrismaError(error: unknown): error is { code: string; message: string
 }
 
 export async function GET() {
+
   try {
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
+
+    if (!session?.user) {
+      return Response.json(
+        {error: 'Usuário não autenticado'},
+        {status: 401}
+      )
+    }
 
     const lista = await prisma.lista.findMany({
+      where: {
+        userId: session.user.id
+      },
       orderBy: {ordem: 'asc'}
     });
 
@@ -41,39 +61,47 @@ export async function POST(request: Request) {
     const body = await request.json();
     
     const { novaTarefa } = body;
+
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
+
+    if (!session?.user) {
+      return Response.json(
+        {error: 'Usuário não autenticado'},
+        {status: 401}
+      )
+    }
+
+    console.log('1')
     
     if (!novaTarefa) {
       return NextResponse.json({ error: 'novaTarefa é obrigatório' }, { status: 400 });
     }
-    
+        console.log('2')
     if (!novaTarefa.descricao || !novaTarefa.descricao.trim()) {
       return NextResponse.json({ error: 'Descrição é obrigatória' }, { status: 400 });
     }
-    
+        console.log('3')
     if (!novaTarefa.data) {
       return NextResponse.json({ error: 'Data é obrigatória' }, { status: 400 });
     }
-
+    console.log('')
     const dataValida = new Date(novaTarefa.data);
     if (isNaN(dataValida.getTime())) {
       return NextResponse.json({ error: 'Data inválida' }, { status: 400 });
     }
-
-    console.log('Criando tarefa:', {
-      status: 'pendente',
-      descricao: novaTarefa.descricao.trim(),
-      data: dataValida
-    });
-
+    console.log('4')
     const tarefa = await prisma.lista.create({ 
       data: { 
         status: 'pendente', 
         descricao: novaTarefa.descricao.trim(), 
         data: dataValida,
-        ordem: await prisma.lista.count()
+        ordem: await prisma.lista.count(),
+        userId: session.user.id
       }
     });
-
+    console.log('5')
     return NextResponse.json({ 
       message: 'Tarefa adicionada com sucesso', 
       tarefa 
@@ -104,7 +132,7 @@ export async function DELETE(request: Request) {
     }
 
     await prisma.lista.delete({
-      where: { id: Number(id) },
+      where: { id: String(id) },
     });
 
     return NextResponse.json({ message: 'Tarefa deletada com sucesso' });
@@ -130,7 +158,7 @@ export async function PUT(request: Request) {
       const {ordem} = body;
 
       await Promise.all(
-        ordem.map((id:number, index: number) => 
+        ordem.map((id:string, index: number) => 
           prisma.lista.update({
             where: {id},
             data: {ordem: index},
@@ -163,7 +191,7 @@ export async function PUT(request: Request) {
     }
 
     const tarefa = await prisma.lista.update({
-      where: { id: Number(id) },
+      where: { id: String(id) },
       data: updateData,
     });
 
@@ -182,3 +210,4 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'Erro interno ao atualizar tarefa' }, { status: 500 });
   }
 }
+

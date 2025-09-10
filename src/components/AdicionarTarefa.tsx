@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import {Xdelete, EditIcon} from '../components/Lucide';
 import { DragDropContext, Draggable, Droppable, DropResult } from '@hello-pangea/dnd'
+import {useSession} from "@/lib/auth-client"
 
-type Lista =  { id: number, descricao: string; data: Date; status: string };
+type Lista =  { id: number, descricao: string; data: Date; status: string; userId: string };
 
 export default function AdicionarTarefa() {
   const [lista, setLista] = useState<Lista[]>([]);
@@ -24,6 +25,7 @@ export default function AdicionarTarefa() {
 
     useEffect(() => {
     carregarTarefas();
+
   }, []);
 
   // EDITAR AS TAREFAS
@@ -130,7 +132,7 @@ export default function AdicionarTarefa() {
     const response = await fetch('/api/lista_api');
 
     if (response.ok) {
-      const data: { lista: { id: number, descricao: string; data: string; status: string; ordem: number;}[] } = await response.json();
+      const data: { lista: { id: number, descricao: string; data: string; status: string; ordem: number; userId: string;}[] } = await response.json();
 
       const listaConvertida: Lista[] = data.lista.map((item) => ({
         ...item,
@@ -174,8 +176,20 @@ export default function AdicionarTarefa() {
     }, 30);
   }
 
+  const {data: session, isPending} = useSession()
+
   async function adicionarTarefa(e: React.FormEvent) {
     e.preventDefault();
+
+    if (isPending) {
+      alert('Verificando autenticação...');
+      return;
+    }
+
+    if (!session?.user?.id) {
+      alert('Usuário não autenticado');
+      return;
+    }
 
     if (!descricao.trim()) {
       abrirModalAdd2();
@@ -192,7 +206,8 @@ export default function AdicionarTarefa() {
         descricao: descricao.trim(),
         status: 'pendente',
         data: new Date(data + 'T00:00:00-03:00').toISOString(),
-        oredem: 1
+        ordem: 1,
+        userId: session.user.id
       };
 
       const response = await fetch('/api/lista_api', {

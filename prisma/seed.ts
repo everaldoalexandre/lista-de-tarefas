@@ -1,20 +1,23 @@
-import { PrismaClient, Prisma } from "../src/generated/prisma";
+import { auth } from "@/lib/auth"
 
-const prisma = new PrismaClient();
-
-const userData: Prisma.ListaCreateInput[] = [
-  {
-    descricao: 'Assistir aula',
-    data: '',
-    status: 'pendente',
-    ordem: 1
-  }
-];
+const userData = [
+	{
+		email: "super1@admin.com",
+		name: "Super Admin",
+		password: "teste123",
+	}
+]
 
 export async function main() {
-  for (const u of userData) {
-    await prisma.lista.create({ data: u });
-  }
+	for (const user of userData) {
+		await auth.api.signUpEmail({
+			body: {
+				email: user.email,
+				name: user.name,
+				password: user.password
+			}
+		})
+	}
 }
 
-main();
+main()
