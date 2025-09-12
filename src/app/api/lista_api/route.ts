@@ -72,26 +72,24 @@ export async function POST(request: Request) {
         {status: 401}
       )
     }
-
-    console.log('1')
     
     if (!novaTarefa) {
       return NextResponse.json({ error: 'novaTarefa é obrigatório' }, { status: 400 });
     }
-        console.log('2')
+
     if (!novaTarefa.descricao || !novaTarefa.descricao.trim()) {
       return NextResponse.json({ error: 'Descrição é obrigatória' }, { status: 400 });
     }
-        console.log('3')
+
     if (!novaTarefa.data) {
       return NextResponse.json({ error: 'Data é obrigatória' }, { status: 400 });
     }
-    console.log('')
+
     const dataValida = new Date(novaTarefa.data);
     if (isNaN(dataValida.getTime())) {
       return NextResponse.json({ error: 'Data inválida' }, { status: 400 });
     }
-    console.log('4')
+
     const tarefa = await prisma.lista.create({ 
       data: { 
         status: 'pendente', 
@@ -101,10 +99,10 @@ export async function POST(request: Request) {
         userId: session.user.id
       }
     });
-    console.log('5')
+
     return NextResponse.json({ 
       message: 'Tarefa adicionada com sucesso', 
-      tarefa 
+      tarefa
     }, { status: 201 });
     
   } catch (error) {
