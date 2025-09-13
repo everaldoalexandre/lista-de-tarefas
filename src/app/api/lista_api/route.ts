@@ -24,6 +24,7 @@ function isPrismaError(error: unknown): error is { code: string; message: string
 export async function GET() {
 
   try {
+
     const session = await auth.api.getSession({
       headers: await headers()
     })

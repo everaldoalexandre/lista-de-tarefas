@@ -4,7 +4,7 @@ import { Label } from "@radix-ui/react-label";
 import { GalleryVerticalEnd } from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { useRef } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
@@ -14,15 +14,12 @@ export function CadastroForm({
     className,
     ...props
 }: React.ComponentProps<"div">) {
-    const emailRef = useRef <HTMLInputElement>(null)
-    const passwordRef = useRef <HTMLInputElement>(null)
-    const nameRef = useRef <HTMLInputElement>(null)
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [name, setName] = useState('');
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const email = emailRef.current?.value;
-        const password = passwordRef.current?.value;
-        const name = nameRef.current?.value;
 
         if (!email || !password || !name) {
             toast.error('Por favor, preencha todos os campos.')
@@ -39,16 +36,12 @@ export function CadastroForm({
                 callbackURL: "/login",
             });
 
-            await fetch('/api/lista_api', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ newUser })
-            });
+
             toast.success("Cadastro realizado com sucesso!");
 
-            if (emailRef.current) emailRef.current.value = "";
-            if (nameRef.current) nameRef.current.value = "";
-            if (passwordRef.current) passwordRef.current.value = "";
+            setEmail('');
+            setName('');
+            setPassword('');
 
             } catch (err) {
             console.error(err);
@@ -79,7 +72,8 @@ export function CadastroForm({
                     <Input
                         id="name"
                         autoComplete="name"
-                        ref={nameRef}
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
                         type="text"
                         placeholder="Seu nome completo"
                         required
@@ -90,7 +84,8 @@ export function CadastroForm({
                     <Input
                     id="email"
                     autoComplete="off"
-                    ref={emailRef}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     type="email"
                     placeholder="m@example.com"
                     />
@@ -99,7 +94,8 @@ export function CadastroForm({
                     <Label htmlFor="password">Senha</Label>
                     <Input
                     id="password"
-                    ref={passwordRef}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     type="password"
                     placeholder="Sua senha"
                     />

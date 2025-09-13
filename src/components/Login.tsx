@@ -1,6 +1,6 @@
 'use client'
 
-import { GalleryVerticalEnd, Link } from "lucide-react"
+import { GalleryVerticalEnd } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -33,14 +33,13 @@ export function LoginForm({
       callbackURL: "/",
     }, {
       onRequest() {
-        // é acionado quando a requisição é enviada
+        
       },
       onError() {
-        // é acionado quando ocorre um erro na requisição
         toast.error("Erro ao fazer login. Verifique suas credenciais.")
       },
       onSuccess() {
-        // é acionado quando a requisição é bem-sucedida
+        
         toast.success("Login realizado com sucesso!")
 
         emailRef.current!.value = ''
