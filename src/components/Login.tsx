@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useRef } from "react"
+import { useState } from "react"
 import { toast } from "sonner"
 import { authClient } from "@/lib/auth-client"
 
@@ -14,13 +14,11 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const emailRef = useRef<HTMLInputElement>(null)
-  const passwordRef = useRef<HTMLInputElement>(null)
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const email = emailRef.current?.value
-    const password = passwordRef.current?.value
 
     if (!email || !password) {
       toast.error("Por favor, preencha todos os campos.")
@@ -35,15 +33,18 @@ export function LoginForm({
       onRequest() {
         
       },
-      onError() {
-        toast.error("Erro ao fazer login. Verifique suas credenciais.")
+      onError(ctx) {
+
+        if (ctx?.error?.code?.includes('INVALID_EMAIL_OR_PASSWORD')){
+          toast.error("Erro ao fazer login. Verifique suas credenciais.")
+        }
       },
       onSuccess() {
         
         toast.success("Login realizado com sucesso!")
 
-        emailRef.current!.value = ''
-        passwordRef.current!.value = ''
+        setEmail('');
+        setPassword('');
       }
     })
   }
@@ -70,7 +71,8 @@ export function LoginForm({
               <Input
                 id="email"
                 autoComplete="off"
-                ref={emailRef}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 type="email"
                 placeholder="m@example.com"
               />
@@ -79,7 +81,8 @@ export function LoginForm({
               <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
-                ref={passwordRef}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 type="password"
                 placeholder="Sua senha"
               />

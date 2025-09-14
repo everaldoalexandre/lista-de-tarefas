@@ -16,6 +16,6 @@ export default function Logout() {
                         toast.success("Conta deslogada.")
                     }
                 }
-            })}>Deslogar</Button>
+            })}>Sair</Button>
     </div>
 }

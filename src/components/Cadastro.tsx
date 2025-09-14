@@ -16,40 +16,47 @@ export function CadastroForm({
 }: React.ComponentProps<"div">) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [passwordconfirmation, setPasswordConfirmation] = useState('');
     const [name, setName] = useState('');
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        if (!email || !password || !name) {
+        if (!email || !password || !passwordconfirmation || !name) {
             toast.error('Por favor, preencha todos os campos.')
             return;
         }
 
-        try {
+        if (password !== passwordconfirmation) {
+            toast.error('As senhas não estão iguais.')
+            return;
+        }
             
-            const newUser = await authClient.signUp.email({
-                
-                email,
-                password,
-                name,
-                callbackURL: "/login",
-            });
+        await authClient.signUp.email({
+            
+            email,
+            password,
+            name,
+            callbackURL: "/",
+        },{
+            onRequest(){
 
-
-            toast.success("Cadastro realizado com sucesso!");
-
-            setEmail('');
-            setName('');
-            setPassword('');
-
-            } catch (err) {
-            console.error(err);
-            toast.error("Erro inesperado. Tente novamente.");
+            },
+            onError(ctx) {
+                if (ctx?.error?.code?.includes('USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL')) {
+                    toast.error('Este email já está cadastrado. Tente usar outro email.');
+                } else if (ctx?.error?.code?.includes('PASSWORD_TOO_SHORT')) {
+                    toast.error('Sua senha precisa ter no mínimo 8 caracteres.');
+                } else {
+                    toast.error('Falha ao realizar o cadastro. Tente novamente.');
+                }
+            },
+            onSuccess(){
+                toast.success("Cadastro realizado com sucesso!");
+                window.location.href = "/"
             }
-        };
-    
-
+        });
+    }
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
             <form onSubmit={handleSubmit}>
@@ -96,6 +103,16 @@ export function CadastroForm({
                     id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    type="password"
+                    placeholder="Sua senha"
+                    />
+                </div>
+                <div className="grid gap-3">
+                    <Label htmlFor="password">Senha</Label>
+                    <Input
+                    id="password"
+                    value={passwordconfirmation}
+                    onChange={(e) => setPasswordConfirmation(e.target.value)}
                     type="password"
                     placeholder="Sua senha"
                     />

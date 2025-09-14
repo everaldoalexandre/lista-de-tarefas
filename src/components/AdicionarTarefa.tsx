@@ -38,7 +38,7 @@ export default function AdicionarTarefa() {
 
   async function salvarEdicao(tarefaEditando: Lista, descricao: string, data: string) {
     try {
-      const response = await fetch('/api/lista_api', {
+      const response = await fetch('/api/tarefa', {
         method: 'PUT', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -72,7 +72,7 @@ export default function AdicionarTarefa() {
     try {
       const ordem = novaLista.map(tarefa => tarefa.id);
 
-      await fetch('/api/lista_api', {
+      await fetch('/api/tarefa', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json'},
         body: JSON.stringify({ordem}),
@@ -92,7 +92,7 @@ export default function AdicionarTarefa() {
     setLista(novaLista);
     
     const tarefa = novaLista[id];
-    fetch('/api/lista_api', {
+    fetch('/api/tarefa', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: tarefa.id, status: tarefa.status }),
@@ -115,7 +115,7 @@ export default function AdicionarTarefa() {
   async function deletarTarefaConfirmada() {
   if (!tarefaSelecionada) return;
 
-  const response = await fetch('/api/lista_api', {
+  const response = await fetch('/api/tarefa', {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id: tarefaSelecionada.id }),
@@ -133,7 +133,7 @@ export default function AdicionarTarefa() {
 
   async function carregarTarefas() {
 
-    const response = await fetch('/api/lista_api');
+    const response = await fetch('/api/tarefa');
 
     if (response.ok) {
       const data: { lista: { id: number, descricao: string; data: string; status: string; ordem: number; userId: string;}[] } = await response.json();
@@ -194,7 +194,7 @@ export default function AdicionarTarefa() {
         userId: session.user.id
       };
 
-      const response = await fetch('/api/lista_api', {
+      const response = await fetch('/api/tarefa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ novaTarefa })
