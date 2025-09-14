@@ -17,10 +17,8 @@ export default function Home() {
         <div className="w-full justify-items-center pt-5">
           <AdicionarTarefa/>
         </div>
-
       </main>
       <footer className="text-gray-500 font-bold row-start-3 flex gap-[24px] flex-wrap items-center justify-center @media">
-        
       </footer>
     </div>
   );
