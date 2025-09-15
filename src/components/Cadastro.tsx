@@ -50,6 +50,7 @@ export function CadastroForm({
                 } else {
                     toast.error('Falha ao realizar o cadastro. Tente novamente.');
                 }
+                console.log(ctx)
             },
             onSuccess(){
                 toast.success("Cadastro realizado com sucesso!");

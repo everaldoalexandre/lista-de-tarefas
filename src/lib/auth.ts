@@ -7,6 +7,9 @@ const prisma = new PrismaClient()
 
 export const auth = betterAuth({
 
+    baseURL: process.env.BETTER_AUTH_URL,
+    secret: process.env.BETTER_AUTH_SECRET,
+
     trustedOrigins: ["https://lista-de-tarefas-rho-smoky.vercel.app", "http://localhost:3000"],
 
     database: prismaAdapter(prisma, {
@@ -16,6 +19,10 @@ export const auth = betterAuth({
     advanced: {
         database: {
             generateId: false
+        },
+        crossSubDomainCookies: {
+            enabled: true,
+            domain: process.env.NODE_ENV === 'production' ? '.yourdomain.com' : undefined,
         }
     },
 
