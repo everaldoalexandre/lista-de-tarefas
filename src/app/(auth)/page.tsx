@@ -2,6 +2,7 @@ import AdicionarTarefa from "@/components/AdicionarTarefa";
 import DataAtual from "@/components/DataAtual";
 import Logout from "@/components/Logout";
 
+
 export default function Home() {
   return (
     <div className="font-sans bg-gray-100 items-center justify-items-center min-h-screen pb-20">
