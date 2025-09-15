@@ -1,6 +1,6 @@
 import AdicionarTarefa from "@/components/AdicionarTarefa";
 import DataAtual from "@/components/DataAtual";
-import Logout from "@/components/Logout";
+import Logout from "@/components/logout";
 
 
 export default function Home() {
