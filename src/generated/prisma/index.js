@@ -181,7 +181,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\evera\\OneDrive\\Documentos\\projects\\lista-de-tarefas\\src\\generated\\prisma",
+      "value": "C:\\Users\\evera\\projects\\lista-de-tarefas\\src\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -195,7 +195,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\Users\\evera\\OneDrive\\Documentos\\projects\\lista-de-tarefas\\prisma\\schema.prisma",
+    "sourceFilePath": "C:\\Users\\evera\\projects\\lista-de-tarefas\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
