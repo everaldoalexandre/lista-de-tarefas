@@ -1,4 +1,4 @@
-export default function DurrentDate() {
+export default function CurrentDate() {
   const rawDate = new Date().toLocaleDateString('pt-BR', {timeZone: 'America/Sao_Paulo', weekday: 'long', day: '2-digit', month: 'long'});
 
     const [weekdayRaw, day, , monthRaw] = rawDate.replace(',', '').split(' ');

@@ -31,7 +31,7 @@ export async function GET() {
 
     if (!session?.user) {
       return Response.json(
-        {error: 'Usuário não autenticado'},
+        {error: 'Unauthenticated user'},
         {status: 401}
       )
     }
@@ -50,8 +50,8 @@ export async function GET() {
 
     return NextResponse.json({list: listEnd});
   } catch (error) {
-    console.error('Erro ao buscar tarefas:', error);
-    return NextResponse.json({ error: 'Erro ao buscar tarefas' }, { status: 500 });
+    console.error('Error when searching for tasks:', error);
+    return NextResponse.json({ error: 'Error when searching for tasks' }, { status: 500 });
   }
 }
 
@@ -69,52 +69,52 @@ export async function POST(request: Request) {
 
     if (!session?.user) {
       return Response.json(
-        {error: 'Usuário não autenticado'},
+        {error: 'Unauthenticated user'},
         {status: 401}
       )
     }
     
     if (!newTask) {
-      return NextResponse.json({ error: 'novaTarefa é obrigatório' }, { status: 400 });
+      return NextResponse.json({ error: 'newTask is mandatory' }, { status: 400 });
     }
 
     if (!newTask.description || !newTask.description.trim()) {
-      return NextResponse.json({ error: 'Descrição é obrigatória' }, { status: 400 });
+      return NextResponse.json({ error: 'Description is mandatory' }, { status: 400 });
     }
 
     if (!newTask.date) {
-      return NextResponse.json({ error: 'Data é obrigatória' }, { status: 400 });
+      return NextResponse.json({ error: 'Date is mandatory' }, { status: 400 });
     }
 
-    const dataValida = new Date(newTask.date);
-    if (isNaN(dataValida.getTime())) {
-      return NextResponse.json({ error: 'Data inválida' }, { status: 400 });
+    const validDate = new Date(newTask.date);
+    if (isNaN(validDate.getTime())) {
+      return NextResponse.json({ error: 'invalid date' }, { status: 400 });
     }
 
     const task = await prisma.list.create({ 
       data: { 
-        status: 'pendente', 
+        status: 'pending', 
         description: newTask.description.trim(), 
-        date: dataValida,
+        date: validDate,
         order: await prisma.list.count(),
         userId: session.user.id
       }
     });
 
     return NextResponse.json({ 
-      message: 'Tarefa adicionada com sucesso', 
+      message: 'Task added successfully', 
       task
     }, { status: 201 });
     
   } catch (error) {
-    console.error('Erro ao criar tarefa:', error);
+    console.error('Error creating task:', error);
     
     if (isPrismaError(error) && error.code === 'P2002') {
-      return NextResponse.json({ error: 'Tarefa já existe' }, { status: 409 });
+      return NextResponse.json({ error: 'Task already exists' }, { status: 409 });
     }
     
     return NextResponse.json({ 
-      error: 'Erro interno ao criar tarefa',
+      error: 'Internal error creating task',
       details: process.env.NODE_ENV === 'development' && isPrismaError(error) ? error.message : undefined
     }, { status: 500 });
   }
@@ -127,23 +127,23 @@ export async function DELETE(request: Request) {
     const { id } = await request.json();
     
     if (!id) {
-      return NextResponse.json({ error: 'ID é obrigatório' }, { status: 400 });
+      return NextResponse.json({ error: 'ID is mandatory' }, { status: 400 });
     }
 
     await prisma.list.delete({
       where: { id: String(id) },
     });
 
-    return NextResponse.json({ message: 'Tarefa deletada com sucesso' });
+    return NextResponse.json({ message: 'Task deleted successfully' });
     
   } catch (error) {
-    console.error('Erro ao deletar tarefa:', error);
+    console.error('Error deleting task:', error);
     
     if (isPrismaError(error) && error.code === 'P2025') {
-      return NextResponse.json({ error: 'Tarefa não encontrada' }, { status: 404 });
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
     
-    return NextResponse.json({ error: 'Erro interno ao deletar tarefa' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal error while deleting task' }, { status: 500 });
   }
 }
 
@@ -164,13 +164,13 @@ export async function PUT(request: Request) {
           })
         )
       );
-      return NextResponse.json({message: 'Ordem atualizada com sucesso!'});
+      return NextResponse.json({message: 'Order updated successfully!'});
     }
 
     const { id, status, description, date } = body;
 
     if (!id) {
-      return NextResponse.json({ error: 'ID é obrigatório' }, { status: 400 });
+      return NextResponse.json({ error: 'ID is mandatory' }, { status: 400 });
     }
 
     const updateData: UpdateData = {};
@@ -178,15 +178,15 @@ export async function PUT(request: Request) {
     if (status !== undefined) updateData.status = status;
     if (description !== undefined) updateData.description = description;
     if (date !== undefined) {
-      const dataValida = new Date(date);
-      if (isNaN(dataValida.getTime())) {
-        return NextResponse.json({ error: 'Data inválida' }, { status: 400 });
+      const validDate = new Date(date);
+      if (isNaN(validDate.getTime())) {
+        return NextResponse.json({ error: 'Invalid date' }, { status: 400 });
       }
-      updateData.date = dataValida;
+      updateData.date = validDate;
     }
 
     if (Object.keys(updateData).length === 0) {
-      return NextResponse.json({ error: 'Nenhum campo para atualizar' }, { status: 400 });
+      return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
     }
 
     const task = await prisma.list.update({
@@ -195,17 +195,17 @@ export async function PUT(request: Request) {
     });
 
     return NextResponse.json({ 
-      message: 'Tarefa atualizada com sucesso', 
+      message: 'Task updated successfully', 
       task 
     });
     
   } catch (error) {
-    console.error('Erro ao atualizar tarefa:', error);
+    console.error('Error updating task:', error);
     
     if (isPrismaError(error) && error.code === 'P2025') {
-      return NextResponse.json({ error: 'Tarefa não encontrada' }, { status: 404 });
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
     
-    return NextResponse.json({ error: 'Erro interno ao atualizar tarefa' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal error while updating task' }, { status: 500 });
   }
 }

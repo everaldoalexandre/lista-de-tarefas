@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
 
 
-export function CadastroForm({
+export function RegisterForm({
     className,
     ...props
 }: React.ComponentProps<"div">) {
@@ -23,12 +23,12 @@ export function CadastroForm({
         e.preventDefault();
 
         if (!email || !password || !passwordconfirmation || !name) {
-            toast.error('Por favor, preencha todos os campos.')
+            toast.error('Please fill in all fields.')
             return;
         }
 
         if (password !== passwordconfirmation) {
-            toast.error('As senhas não estão iguais.')
+            toast.error('The passwords do not match.')
             return;
         }
             
@@ -44,16 +44,16 @@ export function CadastroForm({
             },
             onError(ctx) {
                 if (ctx?.error?.code?.includes('USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL')) {
-                    toast.error('Este email já está cadastrado. Tente usar outro email.');
+                    toast.error('This email is already registered. Try using another email.');
                 } else if (ctx?.error?.code?.includes('PASSWORD_TOO_SHORT')) {
-                    toast.error('Sua senha precisa ter no mínimo 8 caracteres.');
+                    toast.error('Your password must be at least 8 characters long.');
                 } else {
-                    toast.error('Falha ao realizar o cadastro. Tente novamente.');
+                    toast.error('Failed to register. Please try again.');
                 }
                 console.log(ctx)
             },
             onSuccess(){
-                toast.success("Cadastro realizado com sucesso!");
+                toast.success("Registration completed successfully!");
                 window.location.href = "/"
             }
         });
@@ -72,18 +72,18 @@ export function CadastroForm({
                     </div>
                     <span className="sr-only">Acme Inc.</span>
                 </a>
-                <h1 className="text-xl font-bold">Informe seus dados para o cadastro.</h1>
+                <h1 className="text-xl font-bold">Enter your details for registration.</h1>
                 </div>
                 <div className="flex flex-col gap-6">
                 <div className="grid gap-3">
-                    <Label htmlFor="name">Nome</Label>
+                    <Label htmlFor="name">Name</Label>
                     <Input
                         id="name"
                         autoComplete="name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         type="text"
-                        placeholder="Seu nome completo"
+                        placeholder="Your full name"
                         required
                     />
                 </div>
@@ -99,27 +99,27 @@ export function CadastroForm({
                     />
                 </div>
                 <div className="grid gap-3">
-                    <Label htmlFor="password">Senha</Label>
+                    <Label htmlFor="password">Password</Label>
                     <Input
                     id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     type="password"
-                    placeholder="Sua senha"
+                    placeholder="Password"
                     />
                 </div>
                 <div className="grid gap-3">
-                    <Label htmlFor="password">Senha</Label>
+                    <Label htmlFor="password">Confirm password</Label>
                     <Input
                     id="password"
                     value={passwordconfirmation}
                     onChange={(e) => setPasswordConfirmation(e.target.value)}
                     type="password"
-                    placeholder="Sua senha"
+                    placeholder="Confirm password"
                     />
                 </div>
                 <Button type="submit" className="w-full">
-                    Cadastrar
+                    Register
                 </Button>
                 </div>
             </div>

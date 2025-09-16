@@ -7,7 +7,8 @@ import { toast } from "sonner";
 
 export default function Logout() {
     const router = useRouter();
-    return <div>
+    return (
+    <div>
         <Button type="button" onClick={
             () => authClient.signOut({
                 fetchOptions: {
@@ -18,4 +19,5 @@ export default function Logout() {
                 }
             })}>Logout</Button>
     </div>
+    )
 }

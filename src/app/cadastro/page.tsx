@@ -1,4 +1,4 @@
-import { CadastroForm } from "@/components/Register"
+import { RegisterForm } from "@/components/Register"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
@@ -17,7 +17,7 @@ export default async function LoginPage() {
   return (
     <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
       <div className="w-full max-w-sm">
-        <CadastroForm />
+        <RegisterForm />
       </div>
       <div>
         <Link href="/login">

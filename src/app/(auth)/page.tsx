@@ -1,7 +1,7 @@
 import AddTask from "@/components/AddTask";
-import AddTsk from "@/components/AddTask";
 import CurrentDate from "@/components/CurrentDate";
 import Logout from "@/components/logout";
+
 
 
 export default function Home() {
