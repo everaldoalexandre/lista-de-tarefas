@@ -8,9 +8,9 @@ const prisma = new PrismaClient();
 
 interface UpdateData {
   status?: string;
-  descricao?: string;
-  data?: Date;
-  ordem?: number;
+  description?: string;
+  date?: Date;
+  order?: number;
   userId?: string;
 }
 
@@ -36,19 +36,19 @@ export async function GET() {
       )
     }
 
-    const lista = await prisma.lista.findMany({
+    const list = await prisma.list.findMany({
       where: {
         userId: session.user.id
       },
-      orderBy: {ordem: 'asc'}
+      orderBy: {order: 'asc'}
     });
 
-    const listaFinal = lista.map((tarefa, index) => ({
-      ...tarefa,
-      ordem: tarefa.ordem ?? index,
+    const listEnd = list.map((task, index) => ({
+      ...task,
+      order: task.order ?? index,
     }));
 
-    return NextResponse.json({lista: listaFinal});
+    return NextResponse.json({list: listEnd});
   } catch (error) {
     console.error('Erro ao buscar tarefas:', error);
     return NextResponse.json({ error: 'Erro ao buscar tarefas' }, { status: 500 });
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    const { novaTarefa } = body;
+    const { newTask } = body;
 
     const session = await auth.api.getSession({
       headers: await headers()
@@ -74,36 +74,36 @@ export async function POST(request: Request) {
       )
     }
     
-    if (!novaTarefa) {
+    if (!newTask) {
       return NextResponse.json({ error: 'novaTarefa é obrigatório' }, { status: 400 });
     }
 
-    if (!novaTarefa.descricao || !novaTarefa.descricao.trim()) {
+    if (!newTask.description || !newTask.description.trim()) {
       return NextResponse.json({ error: 'Descrição é obrigatória' }, { status: 400 });
     }
 
-    if (!novaTarefa.data) {
+    if (!newTask.date) {
       return NextResponse.json({ error: 'Data é obrigatória' }, { status: 400 });
     }
 
-    const dataValida = new Date(novaTarefa.data);
+    const dataValida = new Date(newTask.date);
     if (isNaN(dataValida.getTime())) {
       return NextResponse.json({ error: 'Data inválida' }, { status: 400 });
     }
 
-    const tarefa = await prisma.lista.create({ 
+    const task = await prisma.list.create({ 
       data: { 
         status: 'pendente', 
-        descricao: novaTarefa.descricao.trim(), 
-        data: dataValida,
-        ordem: await prisma.lista.count(),
+        description: newTask.description.trim(), 
+        date: dataValida,
+        order: await prisma.list.count(),
         userId: session.user.id
       }
     });
 
     return NextResponse.json({ 
       message: 'Tarefa adicionada com sucesso', 
-      tarefa
+      task
     }, { status: 201 });
     
   } catch (error) {
@@ -130,7 +130,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'ID é obrigatório' }, { status: 400 });
     }
 
-    await prisma.lista.delete({
+    await prisma.list.delete({
       where: { id: String(id) },
     });
 
@@ -153,21 +153,21 @@ export async function PUT(request: Request) {
   try {
     const body = await request.json();
 
-    if (body.ordem && Array.isArray(body.ordem)){
-      const {ordem} = body;
+    if (body.order && Array.isArray(body.order)){
+      const {order} = body;
 
       await Promise.all(
-        ordem.map((id:string, index: number) => 
-          prisma.lista.update({
+        order.map((id:string, index: number) => 
+          prisma.list.update({
             where: {id},
-            data: {ordem: index},
+            data: {order: index},
           })
         )
       );
       return NextResponse.json({message: 'Ordem atualizada com sucesso!'});
     }
 
-    const { id, status, descricao, data } = body;
+    const { id, status, description, date } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID é obrigatório' }, { status: 400 });
@@ -176,27 +176,27 @@ export async function PUT(request: Request) {
     const updateData: UpdateData = {};
 
     if (status !== undefined) updateData.status = status;
-    if (descricao !== undefined) updateData.descricao = descricao;
-    if (data !== undefined) {
-      const dataValida = new Date(data);
+    if (description !== undefined) updateData.description = description;
+    if (date !== undefined) {
+      const dataValida = new Date(date);
       if (isNaN(dataValida.getTime())) {
         return NextResponse.json({ error: 'Data inválida' }, { status: 400 });
       }
-      updateData.data = dataValida;
+      updateData.date = dataValida;
     }
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: 'Nenhum campo para atualizar' }, { status: 400 });
     }
 
-    const tarefa = await prisma.lista.update({
+    const task = await prisma.list.update({
       where: { id: String(id) },
       data: updateData,
     });
 
     return NextResponse.json({ 
       message: 'Tarefa atualizada com sucesso', 
-      tarefa 
+      task 
     });
     
   } catch (error) {

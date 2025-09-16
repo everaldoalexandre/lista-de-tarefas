@@ -1,4 +1,4 @@
-import { CadastroForm } from "@/components/Cadastro"
+import { CadastroForm } from "@/components/Register"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
@@ -22,7 +22,7 @@ export default async function LoginPage() {
       <div>
         <Link href="/login">
           <Button type="button">
-            Ir para página de Login
+            Go to Login page
           </Button>
         </Link>
       </div>

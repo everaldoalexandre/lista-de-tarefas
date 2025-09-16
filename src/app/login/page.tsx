@@ -23,7 +23,7 @@ export default async function LoginPage() {
       <div>
         <Link href="/cadastro">
           <Button type="button">
-            Cadastrar
+            Register
           </Button>
         </Link>
       </div>

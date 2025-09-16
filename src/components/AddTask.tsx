@@ -1,50 +1,50 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {Xdelete, EditIcon} from '../components/Lucide';
+import {DeleteIcon, EditIcon} from './Lucide';
 import { DragDropContext, Draggable, Droppable, DropResult } from '@hello-pangea/dnd'
 import {useSession} from "@/lib/auth-client"
 import { toast } from "sonner"
 
-type Lista =  { id: number, descricao: string; data: Date; status: string; userId: string };
+type List =  { id: number, description: string; date: Date; status: string; userId: string };
 
-export default function AdicionarTarefa() {
-  const [lista, setLista] = useState<Lista[]>([]);
-  const [descricao, setDescricao] = useState('');
-  const [data, setData] = useState('');
+export default function AddTask() {
+  const [list, setList] = useState<List[]>([]);
+  const [description, setDescription] = useState('');
+  const [date, setDate] = useState('');
   const [progress, setProgress] = useState(0);
-  const [tarefaSelecionada, setTarefaSelecionada] = useState<Lista | null>(null);
+  const [taskSelected, setTaskSelected] = useState<List | null>(null);
   
   const [showModalDelete, setShowModalDelete] = useState(false);
   const [showModalAdd, setShowModalAdd] = useState(false);
   const [showModalEdit, setShowModalEdit] = useState(false);
-  const [tarefaEditando, setTarefaEditando] = useState<Lista | null>(null);
-  const [descricaoEdit, setDescricaoEdit] = useState('');
-  const [dataEdit, setDataEdit] = useState('');
+  const [taskEdit, setTaskEdit] = useState<List | null>(null);
+  const [descriptionEdit, setDescriptionEdit] = useState('');
+  const [dateEdit, setDateEdit] = useState('');
 
 
     useEffect(() => {
-    carregarTarefas();
+    toloadTask();
 
   }, []);
 
   // EDITAR AS TAREFAS
-  function abrirModalEditar(tarefa: Lista) {
-    setTarefaEditando(tarefa);
-    setDescricaoEdit(tarefa.descricao);
-    setDataEdit(tarefa.data.toISOString().slice(0,10));
+  function openModalEdit(task: List) {
+    setTaskEdit(task);
+    setDescriptionEdit(task.description);
+    setDateEdit(task.date.toISOString().slice(0,10));
     setShowModalEdit(true);
   }
 
-  async function salvarEdicao(tarefaEditando: Lista, descricao: string, data: string) {
+  async function saveEdit(taskEdit: List, description: string, date: string) {
     try {
       const response = await fetch('/api/tarefa', {
         method: 'PUT', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: tarefaEditando.id,
-          descricao,
-          data: new Date(data + 'Z-3:00'),
+          id: taskEdit.id,
+          description,
+          date: new Date(date + 'Z-3:00'),
         }),
       });
 
@@ -54,7 +54,7 @@ export default function AdicionarTarefa() {
         throw new Error('Erro ao atualizar tarefa');
       }
 
-      carregarTarefas();
+      toloadTask();
     } catch (error) {
       alert(error);
     }
@@ -63,14 +63,14 @@ export default function AdicionarTarefa() {
   async function handleOnDragEnd(result: DropResult){
     if (!result.destination) return;
 
-    const novaLista = Array.from(lista);
-    const [reordenada] = novaLista.splice(result.source.index, 1);
-    novaLista.splice(result.destination.index, 0, reordenada);
+    const newList = Array.from(list);
+    const [reordenada] = newList.splice(result.source.index, 1);
+    newList.splice(result.destination.index, 0, reordenada);
 
-    setLista(novaLista);
+    setList(newList);
 
     try {
-      const ordem = novaLista.map(tarefa => tarefa.id);
+      const ordem = newList.map(tarefa => tarefa.id);
 
       await fetch('/api/tarefa', {
         method: 'PUT',
@@ -81,17 +81,17 @@ export default function AdicionarTarefa() {
     }catch (error) {
       console.error('Erro ao salvar nova ordem:', error);
       toast.error('Não foi possível salvar a nova ordem. Recarregue a página.');
-      carregarTarefas();
+      toloadTask();
     }
   }
 
   // MARCAR TAREFA COMO CONCLUIDA
   function marcarTarefa(id: number) {
-    const novaLista = [...lista];
-    novaLista[id].status = novaLista[id].status === 'pendente' ? 'concluido' : 'pendente';
-    setLista(novaLista);
+    const newList = [...list];
+    newList[id].status = newList[id].status === 'pendente' ? 'concluido' : 'pendente';
+    setList(newList);
     
-    const tarefa = novaLista[id];
+    const tarefa = newList[id];
     fetch('/api/tarefa', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -99,59 +99,59 @@ export default function AdicionarTarefa() {
     }).catch(() => {
       toast.error('Erro ao atualizar status');
 
-      const revertLista = [...novaLista];
-      revertLista[id].status = revertLista[id].status === 'pendente' ? 'concluido' : 'pendente';
-      setLista(revertLista);
+      const revertList = [...newList];
+      revertList[id].status = revertList[id].status === 'pendente' ? 'concluido' : 'pendente';
+      setList(revertList);
     });
 
-    carregarTarefas();
+    toloadTask();
   }
 
-  function confirmarDelete(tarefa: Lista) {
-    setTarefaSelecionada(tarefa);
+  function confirmarDelete(task: List) {
+    setTaskSelected(task);
     setShowModalDelete(true);
   }
 
   async function deletarTarefaConfirmada() {
-  if (!tarefaSelecionada) return;
+  if (!taskSelected) return;
 
   const response = await fetch('/api/tarefa', {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: tarefaSelecionada.id }),
+    body: JSON.stringify({ id: taskSelected.id }),
   });
   toast.success("Tarefa deletada!")
 
   if (response.ok) {
     setShowModalDelete(false);
-    setTarefaSelecionada(null);
-    carregarTarefas();
+    setTaskSelected(null);
+    toloadTask();
     } else {
       toast.error('Erro ao deletar tarefa');
     }
   }
 
-  async function carregarTarefas() {
+  async function toloadTask() {
 
     const response = await fetch('/api/tarefa');
 
     if (response.ok) {
-      const data: { lista: { id: number, descricao: string; data: string; status: string; ordem: number; userId: string;}[] } = await response.json();
+      const data: { list: { id: number, description: string; date: string; status: string; ordem: number; userId: string;}[] } = await response.json();
 
-      const listaConvertida: Lista[] = data.lista.map((item) => ({
+      const listConverted: List[] = data.list.map((item) => ({
         ...item,
-        data: new Date(item.data),
+        date: new Date(item.date),
       }));
 
-      setLista(listaConvertida);
+      setList(listConverted);
     } else{
-      console.error('Erro ao carregar tarefas', response.statusText);
+      console.error('Error loading tasks', response.statusText);
     }
   }
 
   //MODAL DE TAREFA ADICIONADA
-  function abrirModalAdd() {
-  toast.success("Tarefa adicionada!")
+  function openModalAdd() {
+  toast.success("Task added!")
   setProgress(0);
 
   let width = 0;
@@ -171,25 +171,25 @@ export default function AdicionarTarefa() {
     e.preventDefault();
 
     if (isPending) {
-      toast.success('Verificando autenticação...');
+      toast.success('Checking authentication...');
       return;
     }
 
     if (!session?.user?.id) {
-      toast.error('Usuário não autenticado');
+      toast.error('Unauthenticated user. Please log in.');
       return;
     }
   
-    if (!data.trim()) {
-      toast.error("Por favor, preencha todos os campos.")
+    if (!date.trim()) {
+      toast.error("Please fill in all fields.")
     return;
     }
 
     try {
-      const novaTarefa = {
-        descricao: descricao.trim(),
+      const newTask = {
+        description: description.trim(),
         status: 'pendente',
-        data: new Date(data + 'T00:00:00-03:00').toISOString(),
+        date: new Date(date + 'T00:00:00-03:00').toISOString(),
         ordem: 1,
         userId: session.user.id
       };
@@ -197,18 +197,18 @@ export default function AdicionarTarefa() {
       const response = await fetch('/api/tarefa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ novaTarefa })
+        body: JSON.stringify({ newTask })
       });
 
       const result = await response.json();
 
       if (response.ok) {
-        setDescricao('');
-        setData('');
-        await carregarTarefas();
-        abrirModalAdd();
+        setDescription('');
+        setDate('');
+        await toloadTask();
+        openModalAdd();
       } else {
-        alert(result.error || 'Erro ao adicionar tarefa');
+        alert(result.error || 'Error adding task. Please try again.');
       }
       
     } catch (error) {
@@ -221,15 +221,15 @@ export default function AdicionarTarefa() {
       <form onSubmit={adicionarTarefa} className="flex gap-2 bg-white p-3 rounded-2xl">
         <input
           type="text"
-          value={descricao}
-          onChange={(e) => setDescricao(e.target.value)}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           placeholder="Digite uma nova tarefa"
           className="p-2 rounded min-w-2xl text-gray-500"
         />
         <input
           type="date"
-          value={data}
-          onChange={(e) => setData(e.target.value)}
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
           className="p-1 rounded bg-gray-200 text-gray-500"
         />
         <button type="submit" className="bg-gray-200 text-gray-500 px-4 py-2 rounded-2xl">
@@ -238,33 +238,33 @@ export default function AdicionarTarefa() {
       </form>
       
       <DragDropContext onDragEnd={handleOnDragEnd}>
-        <Droppable droppableId="tarefas">
+        <Droppable droppableId="tasks">
           {(provided) => (
             <ul 
             {...provided.droppableProps} 
             ref={provided.innerRef} 
             className="flex flex-col gap-2 w-full max-w-4xl mx-auto">
-              {lista.map((novaTarefa, id) => (
-                <Draggable key={novaTarefa.id} draggableId={String(novaTarefa.id)} index={id}>
+              {list.map((newTask, id) => (
+                <Draggable key={newTask.id} draggableId={String(newTask.id)} index={id}>
                   {(provided) => (
                     <li
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={`grid grid-cols-[40px_2fr_100px_40px_40px] items-center gap-2 p-2 rounded ${novaTarefa.status === 'concluido' ? 'bg-gray-200 text-gray-500 line-through' : 'bg-white text-black'}`}>
-                        <input type="checkbox" className="w-5 h5 accent-gray-600" checked={novaTarefa.status === 'concluido'}
+                      className={`grid grid-cols-[40px_2fr_100px_40px_40px] items-center gap-2 p-2 rounded ${newTask.status === 'concluido' ? 'bg-gray-200 text-gray-500 line-through' : 'bg-white text-black'}`}>
+                        <input type="checkbox" className="w-5 h5 accent-gray-600" checked={newTask.status === 'concluido'}
                           onChange={() => marcarTarefa(id)} />
-                        <span className="break-all">{novaTarefa.descricao}</span>
+                        <span className="break-all">{newTask.description}</span>
                         <span className="text-right">
-                          {novaTarefa.data.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+                          {newTask.date.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
                         </span>
                         <button
                           className='bg-white text-gray-500 rounded hover:bg-gray-200 justify-items-center'
-                          onClick={() => abrirModalEditar(novaTarefa)}
+                          onClick={() => openModalEdit(newTask)}
                         >
                           <EditIcon/>
                         </button>
-                        <button className='bg-white text-gray-500 rounded hover:bg-gray-200 justify-items-center' onClick={() => confirmarDelete(novaTarefa)}> <Xdelete /></button>
+                        <button className='bg-white text-gray-500 rounded hover:bg-gray-200 justify-items-center' onClick={() => confirmarDelete(newTask)}> <DeleteIcon /></button>
                     </li>
                   )}
                 </Draggable>
@@ -285,13 +285,13 @@ export default function AdicionarTarefa() {
                 className="px-4 py-2 rounded font-bold text-gray-500 bg-gray-300 hover:bg-gray-400"
                 onClick={() => setShowModalDelete(false)}
               >
-                Cancelar
+                Cancel
               </button>
               <button 
                 className="px-4 py-2 rounded font-bold bg-gray-800 text-white hover:bg-gray-950"
                 onClick={deletarTarefaConfirmada}
               >
-                Deletar
+                Delete
               </button>
             </div>
           </div>
@@ -315,15 +315,15 @@ export default function AdicionarTarefa() {
             
             <input
               type="text"
-              value={descricaoEdit}
-              onChange={(e) => setDescricaoEdit(e.target.value)}
+              value={descriptionEdit}
+              onChange={(e) => setDescriptionEdit(e.target.value)}
               placeholder="Descrição"
               className="w-full text-gray-500 p-2 rounded mb-2 border border-gray-300"
             />
             <input
               type="date"
-              value={dataEdit}
-              onChange={(e) => setDataEdit(e.target.value)}
+              value={dateEdit}
+              onChange={(e) => setDateEdit(e.target.value)}
               className="w-full text-gray-500 p-2 rounded mb-2 border border-gray-300"
             />
             <div className="flex justify-end gap-4">
@@ -331,19 +331,19 @@ export default function AdicionarTarefa() {
                 className="px-4 py-2 rounded font-bold text-gray-500 bg-gray-300 hover:bg-gray-400"
                 onClick={() => setShowModalEdit(false)}
               >
-                Cancelar
+                Cancel
               </button>
               <button
                 className="px-4 py-2 rounded font-bold bg-gray-800 text-white hover:bg-gray-950"
                 onClick={() => {
-                  if (tarefaEditando) {
-                    salvarEdicao(tarefaEditando, descricaoEdit, dataEdit);
+                  if (taskEdit) {
+                    saveEdit(taskEdit, descriptionEdit, dateEdit);
                     setShowModalEdit(false); // fecha o modal
-                    setTarefaEditando(null); // limpa estado
+                    setTaskEdit(null); // limpa estado
                   }
                 }}
               >
-                Salvar
+                Save
               </button>
             </div>
           </div>

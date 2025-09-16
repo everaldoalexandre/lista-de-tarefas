@@ -1,5 +1,6 @@
-import AdicionarTarefa from "@/components/AdicionarTarefa";
-import DataAtual from "@/components/DataAtual";
+import AddTask from "@/components/AddTask";
+import AddTsk from "@/components/AddTask";
+import CurrentDate from "@/components/CurrentDate";
 import Logout from "@/components/logout";
 
 
@@ -13,10 +14,10 @@ export default function Home() {
           </div>
         </nav>
         <div className="w-full pt-20 justify-items-center">
-          <DataAtual/>
+          <CurrentDate/>
         </div>
         <div className="w-full justify-items-center pt-5">
-          <AdicionarTarefa/>
+          <AddTask/>
         </div>
       </main>
       <footer className="text-gray-500 font-bold row-start-3 flex gap-[24px] flex-wrap items-center justify-center @media">

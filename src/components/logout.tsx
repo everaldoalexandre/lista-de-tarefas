@@ -13,9 +13,9 @@ export default function Logout() {
                 fetchOptions: {
                     onSuccess: () => {
                         router.replace("/login");
-                        toast.success("Conta deslogada.")
+                        toast.success("Account logged out.")
                     }
                 }
-            })}>Sair</Button>
+            })}>Logout</Button>
     </div>
 }

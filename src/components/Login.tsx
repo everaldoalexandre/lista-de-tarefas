@@ -21,7 +21,7 @@ export function LoginForm({
     e.preventDefault()
 
     if (!email || !password) {
-      toast.error("Por favor, preencha todos os campos.")
+      toast.error("Please fill in all fields.")
       return
     }
 
@@ -36,12 +36,12 @@ export function LoginForm({
       onError(ctx) {
 
         if (ctx?.error?.code?.includes('INVALID_EMAIL_OR_PASSWORD')){
-          toast.error("Erro ao fazer login. Verifique suas credenciais.")
+          toast.error("Error logging in. Please check your credentials.")
         }
       },
       onSuccess() {
         
-        toast.success("Login realizado com sucesso!")
+        toast.success("Login successful!")
 
         setEmail('');
         setPassword('');
@@ -63,7 +63,7 @@ export function LoginForm({
               </div>
               <span className="sr-only">Acme Inc.</span>
             </a>
-            <h1 className="text-xl font-bold">Informe seus dados para o login.</h1>
+            <h1 className="text-xl font-bold">Enter your login details.</h1>
           </div>
           <div className="flex flex-col gap-6">
             <div className="grid gap-3">
@@ -78,7 +78,7 @@ export function LoginForm({
               />
             </div>
             <div className="grid gap-3">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 value={password}
@@ -88,7 +88,7 @@ export function LoginForm({
               />
             </div>
             <Button type="submit" className="w-full">
-              Entrar
+              Sign In
             </Button>
           </div>
         </div>
