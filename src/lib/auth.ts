@@ -11,7 +11,7 @@ export const auth = betterAuth({
     process.env.NODE_ENV === "production"
       ? process.env.BETTER_AUTH_URL
       : "http://localhost:3000",
-    crossSubdomainCookies: process.env.NODE_ENV === "production", 
+    crossSubdomainCookies: process.env.NODE_ENV === "production",
     secret: process.env.BETTER_AUTH_SECRET,
     databaseURL: process.env.DATABASE_URL,
 
@@ -25,10 +25,6 @@ export const auth = betterAuth({
         database: {
             generateId: false
         },
-        crossSubDomainCookies: {
-            enabled: true,
-            domain: undefined,
-        }
     },
 
     plugins: [nextCookies()],

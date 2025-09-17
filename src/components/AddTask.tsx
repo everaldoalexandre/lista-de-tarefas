@@ -285,7 +285,7 @@ export default function AddTask() {
               type="text"
               value={descriptionEdit}
               onChange={(e) => setDescriptionEdit(e.target.value)}
-              placeholder="Descrição"
+              placeholder="Description"
               className="w-full text-gray-500 p-2 rounded mb-2 border border-gray-300"
             />
             <input
