@@ -35,7 +35,7 @@ export default function AddTask() {
 
   async function saveEdit(taskEdit: List, description: string, date: string) {
     try {
-      const response = await fetch('/api/task', {
+      const response = await fetch('/api/tasks', {
         method: 'PUT', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -69,7 +69,7 @@ export default function AddTask() {
     try {
       const order = newList.map(task => task.id);
 
-      await fetch('/api/task', {
+      await fetch('/api/tasks', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json'},
         body: JSON.stringify({order}),
@@ -88,7 +88,7 @@ export default function AddTask() {
     setList(newList);
     
     const task = newList[id];
-    fetch('/api/task', {
+    fetch('/api/tasks', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: task.id, status: task.status }),
@@ -111,7 +111,7 @@ export default function AddTask() {
   async function deleteConfirmedTask() {
   if (!taskSelected) return;
 
-  const response = await fetch('/api/task', {
+  const response = await fetch('/api/tasks', {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id: taskSelected.id }),
@@ -129,7 +129,7 @@ export default function AddTask() {
 
   async function toloadTask() {
 
-    const response = await fetch('/api/task');
+    const response = await fetch('/api/tasks');
 
     if (response.ok) {
       const date: { list: { id: number, description: string; date: string; status: string; order: number; userId: string;}[] } = await response.json();
@@ -174,7 +174,7 @@ export default function AddTask() {
         userId: session.user.id
       };
 
-      const response = await fetch('/api/task', {
+      const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ newTask })

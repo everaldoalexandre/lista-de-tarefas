@@ -1,6 +1,6 @@
-export type Lista = {
-  descricao: string
-  data: string
+export type List = {
+  descripton: string
+  date: string
   status: number
-  ordem: number
+  order: number
 }
