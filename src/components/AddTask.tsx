@@ -12,11 +12,9 @@ export default function AddTask() {
   const [list, setList] = useState<List[]>([]);
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
-  const [progress, setProgress] = useState(0);
   const [taskSelected, setTaskSelected] = useState<List | null>(null);
   
   const [showModalDelete, setShowModalDelete] = useState(false);
-  const [showModalAdd, setShowModalAdd] = useState(false);
   const [showModalEdit, setShowModalEdit] = useState(false);
   const [taskEdit, setTaskEdit] = useState<List | null>(null);
   const [descriptionEdit, setDescriptionEdit] = useState('');
@@ -28,7 +26,6 @@ export default function AddTask() {
 
   }, []);
 
-  // EDITAR AS TAREFAS
   function openModalEdit(task: List) {
     setTaskEdit(task);
     setDescriptionEdit(task.description);
@@ -38,7 +35,7 @@ export default function AddTask() {
 
   async function saveEdit(taskEdit: List, description: string, date: string) {
     try {
-      const response = await fetch('/api/tarefa', {
+      const response = await fetch('/api/task', {
         method: 'PUT', 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -48,10 +45,10 @@ export default function AddTask() {
         }),
       });
 
-      toast.success("Tarefa editada!")
+      toast.success("Task edit!")
 
       if (!response.ok) {
-        throw new Error('Erro ao atualizar tarefa');
+        throw new Error('Error updating task');
       }
 
       toloadTask();
@@ -64,81 +61,80 @@ export default function AddTask() {
     if (!result.destination) return;
 
     const newList = Array.from(list);
-    const [reordenada] = newList.splice(result.source.index, 1);
-    newList.splice(result.destination.index, 0, reordenada);
+    const [reordered] = newList.splice(result.source.index, 1);
+    newList.splice(result.destination.index, 0, reordered);
 
     setList(newList);
 
     try {
-      const ordem = newList.map(tarefa => tarefa.id);
+      const order = newList.map(task => task.id);
 
-      await fetch('/api/tarefa', {
+      await fetch('/api/task', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json'},
-        body: JSON.stringify({ordem}),
+        body: JSON.stringify({order}),
         
       });
     }catch (error) {
-      console.error('Erro ao salvar nova ordem:', error);
-      toast.error('Não foi possível salvar a nova ordem. Recarregue a página.');
+      console.error('Error saving new order:', error);
+      toast.error('Unable to save new order. Please reload the page.');
       toloadTask();
     }
   }
 
-  // MARCAR TAREFA COMO CONCLUIDA
-  function marcarTarefa(id: number) {
+  function tomarkTask(id: number) {
     const newList = [...list];
-    newList[id].status = newList[id].status === 'pendente' ? 'concluido' : 'pendente';
+    newList[id].status = newList[id].status === 'pending' ? 'completed' : 'pending';
     setList(newList);
     
-    const tarefa = newList[id];
-    fetch('/api/tarefa', {
+    const task = newList[id];
+    fetch('/api/task', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: tarefa.id, status: tarefa.status }),
+      body: JSON.stringify({ id: task.id, status: task.status }),
     }).catch(() => {
-      toast.error('Erro ao atualizar status');
+      toast.error('Error updating status');
 
       const revertList = [...newList];
-      revertList[id].status = revertList[id].status === 'pendente' ? 'concluido' : 'pendente';
+      revertList[id].status = revertList[id].status === 'pending' ? 'completed' : 'pending';
       setList(revertList);
     });
 
     toloadTask();
   }
 
-  function confirmarDelete(task: List) {
+  function confirmedDelete(task: List) {
     setTaskSelected(task);
     setShowModalDelete(true);
   }
 
-  async function deletarTarefaConfirmada() {
+  async function deleteConfirmedTask() {
   if (!taskSelected) return;
 
-  const response = await fetch('/api/tarefa', {
+  const response = await fetch('/api/task', {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id: taskSelected.id }),
   });
-  toast.success("Tarefa deletada!")
+  toast.success("Task deleted!")
 
   if (response.ok) {
     setShowModalDelete(false);
     setTaskSelected(null);
     toloadTask();
     } else {
-      toast.error('Erro ao deletar tarefa');
+      toast.error('Error deleting task');
     }
   }
 
   async function toloadTask() {
 
-    const response = await fetch('/api/tarefa');
+    const response = await fetch('/api/task');
 
     if (response.ok) {
-      const data: { list: { id: number, description: string; date: string; status: string; ordem: number; userId: string;}[] } = await response.json();
+      const date: { list: { id: number, description: string; date: string; status: string; order: number; userId: string;}[] } = await response.json();
 
-      const listConverted: List[] = data.list.map((item) => ({
+      const listConverted: List[] = date.list.map((item) => ({
         ...item,
         date: new Date(item.date),
       }));
@@ -149,25 +145,9 @@ export default function AddTask() {
     }
   }
 
-  //MODAL DE TAREFA ADICIONADA
-  function openModalAdd() {
-  toast.success("Task added!")
-  setProgress(0);
-
-  let width = 0;
-    const interval = setInterval(() => {
-      width += 1; 
-      setProgress(width);
-      if (width >= 100) {
-        clearInterval(interval);
-        setShowModalAdd(false);
-      }
-    }, 30);
-  }  
-
   const {data: session, isPending} = useSession()
 
-  async function adicionarTarefa(e: React.FormEvent) {
+  async function addTask(e: React.FormEvent) {
     e.preventDefault();
 
     if (isPending) {
@@ -188,13 +168,13 @@ export default function AddTask() {
     try {
       const newTask = {
         description: description.trim(),
-        status: 'pendente',
+        status: 'pending',
         date: new Date(date + 'T00:00:00-03:00').toISOString(),
         ordem: 1,
         userId: session.user.id
       };
 
-      const response = await fetch('/api/tarefa', {
+      const response = await fetch('/api/task', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ newTask })
@@ -206,24 +186,23 @@ export default function AddTask() {
         setDescription('');
         setDate('');
         await toloadTask();
-        openModalAdd();
       } else {
         alert(result.error || 'Error adding task. Please try again.');
       }
       
     } catch (error) {
-      console.error('Erro na requisição:', error);
-      toast.error('Erro de conexão. Tente novamente.');
+      console.error('Request error:', error);
+      toast.error('Connection error. Please try again.');
     }
   }
     return (
     <div className="flex flex-col justify-items-center gap-4 p-4">
-      <form onSubmit={adicionarTarefa} className="flex gap-2 bg-white p-3 rounded-2xl">
+      <form onSubmit={addTask} className="flex gap-2 bg-white p-3 rounded-2xl">
         <input
           type="text"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Digite uma nova tarefa"
+          placeholder="Enter a new task"
           className="p-2 rounded min-w-2xl text-gray-500"
         />
         <input
@@ -251,9 +230,9 @@ export default function AddTask() {
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={`grid grid-cols-[40px_2fr_100px_40px_40px] items-center gap-2 p-2 rounded ${newTask.status === 'concluido' ? 'bg-gray-200 text-gray-500 line-through' : 'bg-white text-black'}`}>
-                        <input type="checkbox" className="w-5 h5 accent-gray-600" checked={newTask.status === 'concluido'}
-                          onChange={() => marcarTarefa(id)} />
+                      className={`grid grid-cols-[40px_2fr_100px_40px_40px] items-center gap-2 p-2 rounded ${newTask.status === 'completed' ? 'bg-gray-200 text-gray-500 line-through' : 'bg-white text-black'}`}>
+                        <input type="checkbox" className="w-5 h5 accent-gray-600" checked={newTask.status === 'completed'}
+                          onChange={() => tomarkTask(id)} />
                         <span className="break-all">{newTask.description}</span>
                         <span className="text-right">
                           {newTask.date.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
@@ -264,7 +243,7 @@ export default function AddTask() {
                         >
                           <EditIcon/>
                         </button>
-                        <button className='bg-white text-gray-500 rounded hover:bg-gray-200 justify-items-center' onClick={() => confirmarDelete(newTask)}> <DeleteIcon /></button>
+                        <button className='bg-white text-gray-500 rounded hover:bg-gray-200 justify-items-center' onClick={() => confirmedDelete(newTask)}> <DeleteIcon /></button>
                     </li>
                   )}
                 </Draggable>
@@ -277,8 +256,8 @@ export default function AddTask() {
       {showModalDelete && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-50 bg-opacity-40 z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-lg text-gray-500 font-bold mb-4">Confirmar exclusão</h2>
-            <p className='text-gray-500'>Tem certeza que deseja excluir a tarefa?</p>
+            <h2 className="text-lg text-gray-500 font-bold mb-4">Confirm deletion</h2>
+            <p className='text-gray-500'>Are you sure you want to delete the task?</p>
             
             <div className="mt-6 flex justify-end gap-4">
               <button 
@@ -289,7 +268,7 @@ export default function AddTask() {
               </button>
               <button 
                 className="px-4 py-2 rounded font-bold bg-gray-800 text-white hover:bg-gray-950"
-                onClick={deletarTarefaConfirmada}
+                onClick={deleteConfirmedTask}
               >
                 Delete
               </button>
@@ -297,21 +276,10 @@ export default function AddTask() {
           </div>
         </div>
       )}
-      {showModalAdd && (
-        <div className="fixed inset-0 w-full flex items-start justify-end z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-fit shadow-lg">
-            <h2 className="text-lg text-gray-500 font-bold mb-4">Tarefa Adicionada!</h2>            
-            <div
-              className="h-1 bg-green-500 transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>  
-        </div>
-      )}
       {showModalEdit && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-lg text-gray-500 font-bold mb-4">Editar Tarefa</h2>
+            <h2 className="text-lg text-gray-500 font-bold mb-4">Edit Task</h2>
             
             <input
               type="text"
@@ -338,8 +306,8 @@ export default function AddTask() {
                 onClick={() => {
                   if (taskEdit) {
                     saveEdit(taskEdit, descriptionEdit, dateEdit);
-                    setShowModalEdit(false); // fecha o modal
-                    setTaskEdit(null); // limpa estado
+                    setShowModalEdit(false);
+                    setTaskEdit(null);
                   }
                 }}
               >

@@ -1,6 +1,6 @@
 import AddTask from "@/components/AddTask";
 import CurrentDate from "@/components/CurrentDate";
-import Logout from "@/components/logout";
+import Logout from "@/components/Logout";
 
 
 
