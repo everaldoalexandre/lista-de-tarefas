@@ -6,7 +6,6 @@ import { nextCookies } from "better-auth/next-js";
 const prisma = new PrismaClient()
 
 export const auth = betterAuth({
-
     baseURL:
     process.env.NODE_ENV === "production"
       ? process.env.BETTER_AUTH_URL

@@ -21,7 +21,7 @@ export default async function LoginPage() {
         <LoginForm />
       </div>
       <div>
-        <Link href="/cadastro">
+        <Link href="/register">
           <Button type="button">
             Register
           </Button>
