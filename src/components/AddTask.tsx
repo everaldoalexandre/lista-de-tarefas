@@ -203,7 +203,7 @@ export default function AddTask() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Enter a new task"
-          className="p-2 rounded w-full text-gray-500 lg:min-w-2xl"
+          className="p-2 rounded w-full text-gray-500 lg:min-w-2xl md:min-w-1xl xl:min-w-3xl"
         />
         <input
           type="date"
@@ -230,20 +230,22 @@ export default function AddTask() {
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={`grid grid-cols-[40px_2fr_100px_40px_40px] items-center gap-2 p-2 rounded ${newTask.status === 'completed' ? 'bg-gray-200 text-gray-500 line-through' : 'bg-white text-black'}`}>
+                      className={`grid grid-cols-[40px_2fr_100px_30px_30px] items-center gap-2 p-2 rounded ${newTask.status === 'completed' ? 'bg-gray-200 text-gray-500 line-through' : 'bg-white text-black'}`}>
                         <input type="checkbox" className="w-5 h5 accent-gray-600" checked={newTask.status === 'completed'}
                           onChange={() => tomarkTask(id)} />
-                        <span className="break-all">{newTask.description}</span>
-                        <span className="text-right">
+                        <span className="break-all lg:min-w-1xl">{newTask.description}</span>
+                        <span className="text-right lg:max-w-0.5">
                           {newTask.date.toLocaleDateString('en-US', { timeZone: 'America/Sao_Paulo' })}
                         </span>
-                        <button
-                          className='bg-white text-gray-500 rounded hover:bg-gray-200 justify-items-center'
-                          onClick={() => openModalEdit(newTask)}
-                        >
-                          <EditIcon/>
-                        </button>
-                        <button className='bg-white text-gray-500 rounded hover:bg-gray-200 justify-items-center' onClick={() => confirmedDelete(newTask)}> <DeleteIcon /></button>
+                        <div className='lg:flex justify-items-end'>
+                          <button
+                            className='bg-white text-gray-500 rounded hover:bg-gray-200 justify-items-center'
+                            onClick={() => openModalEdit(newTask)}
+                          >
+                            <EditIcon/>
+                          </button>
+                          <button className='bg-white text-gray-500 rounded hover:bg-gray-200 justify-items-center' onClick={() => confirmedDelete(newTask)}> <DeleteIcon /></button>
+                        </div>
                     </li>
                   )}
                 </Draggable>
