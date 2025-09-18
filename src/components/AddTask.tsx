@@ -203,7 +203,7 @@ export default function AddTask() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Enter a new task"
-          className="p-2 rounded min-w-2xl text-gray-500"
+          className="p-2 rounded w-full text-gray-500 lg:min-w-2xl"
         />
         <input
           type="date"
@@ -222,7 +222,7 @@ export default function AddTask() {
             <ul 
             {...provided.droppableProps} 
             ref={provided.innerRef} 
-            className="flex flex-col gap-2 w-full max-w-4xl mx-auto">
+            className="flex flex-col gap-2 ">
               {list.map((newTask, id) => (
                 <Draggable key={newTask.id} draggableId={String(newTask.id)} index={id}>
                   {(provided) => (
@@ -235,7 +235,7 @@ export default function AddTask() {
                           onChange={() => tomarkTask(id)} />
                         <span className="break-all">{newTask.description}</span>
                         <span className="text-right">
-                          {newTask.date.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })}
+                          {newTask.date.toLocaleDateString('en-US', { timeZone: 'America/Sao_Paulo' })}
                         </span>
                         <button
                           className='bg-white text-gray-500 rounded hover:bg-gray-200 justify-items-center'

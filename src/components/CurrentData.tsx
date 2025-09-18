@@ -1,10 +1,20 @@
 export default function CurrentDate() {
-  const rawDate = new Date().toLocaleDateString('pt-BR', {timeZone: 'America/Sao_Paulo', weekday: 'long', day: '2-digit', month: 'long'});
+  const date = new Date();
 
-    const [weekdayRaw, day, , monthRaw] = rawDate.replace(',', '').split(' ');
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo",
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+  });
 
-    const weekday = weekdayRaw.charAt(0).toUpperCase() + weekdayRaw.slice(1);
-    const month = monthRaw.charAt(0).toUpperCase() + monthRaw.slice(1);
+  const formatted = formatter.format(date);
+
+  const [weekdayRaw, monthRaw, dayRaw] = formatted.replace(',', '').split(' ');
+
+  const weekday = weekdayRaw.charAt(0).toUpperCase() + weekdayRaw.slice(1);
+  const month = monthRaw.charAt(0).toUpperCase() + monthRaw.slice(1);
+  const day = dayRaw;
 
 
   return (
