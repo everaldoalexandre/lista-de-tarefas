@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { DeleteIcon, EditIcon, CalendarIcon, CopyIcon } from './Lucide';
 import { DragDropContext, Draggable, Droppable, DropResult } from '@hello-pangea/dnd'
 import { useSession } from "@/lib/auth-client"
@@ -15,12 +15,20 @@ export default function AddTask({ projectId }: { projectId: string }) {
   const [showDateInput, setShowDateInput] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
   const [taskSelected, setTaskSelected] = useState<Task | null>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
   const [showModalDelete, setShowModalDelete] = useState(false);
   const [showModalEdit, setShowModalEdit] = useState(false);
   const [taskEdit, setTaskEdit] = useState<Task | null>(null);
   const [descriptionEdit, setDescriptionEdit] = useState('');
   const [dateEdit, setDateEdit] = useState('');
+
+  function autoResize() {
+    const el = descriptionRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }
 
   useEffect(() => {
     toloadTask();
@@ -192,6 +200,7 @@ export default function AddTask({ projectId }: { projectId: string }) {
         setDescription('');
         setDate('');
         setShowDateInput(false);
+        if (descriptionRef.current) descriptionRef.current.style.height = 'auto';
         await toloadTask();
       } else {
         alert(result.error || 'Error adding task. Please try again.');
@@ -206,12 +215,16 @@ export default function AddTask({ projectId }: { projectId: string }) {
   return (
     <div className="flex flex-col justify-items-center gap-4 p-4">
       <form onSubmit={addTask} className="flex flex-col sm:flex-row gap-2 bg-white p-3 rounded-2xl w-full max-w-2xl">
-        <input
-          type="text"
+        <textarea
+          ref={descriptionRef}
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => {
+            setDescription(e.target.value);
+            autoResize();
+          }}
           placeholder="Enter a new task"
-          className="p-2 rounded w-full text-gray-500"
+          rows={1}
+          className="p-2 rounded w-full text-gray-500 resize-none overflow-hidden min-h-11"
         />
         <div className="flex gap-2 items-center sm:flex-none">
           <button
