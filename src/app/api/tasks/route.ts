@@ -9,9 +9,10 @@ const prisma = new PrismaClient();
 interface UpdateData {
   status?: string;
   description?: string;
-  date?: Date;
+  date?: Date | null;
   order?: number;
   userId?: string;
+  projectId?: string | null;
 }
 
 function isPrismaError(error: unknown): error is { code: string; message: string } {
@@ -21,7 +22,7 @@ function isPrismaError(error: unknown): error is { code: string; message: string
          'message' in error;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
 
   try {
 
@@ -36,9 +37,13 @@ export async function GET() {
       )
     }
 
+    const { searchParams } = new URL(request.url);
+    const projectId = searchParams.get('projectId');
+
     const list = await prisma.list.findMany({
       where: {
-        userId: session.user.id
+        userId: session.user.id,
+        projectId: projectId || null
       },
       orderBy: {order: 'asc'}
     });
@@ -82,21 +87,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Description is mandatory' }, { status: 400 });
     }
 
-    if (!newTask.date) {
-      return NextResponse.json({ error: 'Date is mandatory' }, { status: 400 });
+    let validDate: Date | null = null;
+    if (newTask.date) {
+      validDate = new Date(newTask.date);
+      if (isNaN(validDate.getTime())) {
+        return NextResponse.json({ error: 'invalid date' }, { status: 400 });
+      }
     }
 
-    const validDate = new Date(newTask.date);
-    if (isNaN(validDate.getTime())) {
-      return NextResponse.json({ error: 'invalid date' }, { status: 400 });
-    }
+    const order = (await prisma.list.count({ where: { projectId: newTask.projectId || null } })) + 1;
 
     const task = await prisma.list.create({ 
       data: { 
         status: 'pending', 
         description: newTask.description.trim(), 
         date: validDate,
-        order: await prisma.list.count(),
+        order,
+        projectId: newTask.projectId || null,
         userId: session.user.id
       }
     });
@@ -167,7 +174,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({message: 'Order updated successfully!'});
     }
 
-    const { id, status, description, date } = body;
+    const { id, status, description, date, projectId } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID is mandatory' }, { status: 400 });
@@ -178,12 +185,17 @@ export async function PUT(request: Request) {
     if (status !== undefined) updateData.status = status;
     if (description !== undefined) updateData.description = description;
     if (date !== undefined) {
-      const validDate = new Date(date);
-      if (isNaN(validDate.getTime())) {
-        return NextResponse.json({ error: 'Invalid date' }, { status: 400 });
+      if (date === null || date === '') {
+        updateData.date = null;
+      } else {
+        const validDate = new Date(date);
+        if (isNaN(validDate.getTime())) {
+          return NextResponse.json({ error: 'Invalid date' }, { status: 400 });
+        }
+        updateData.date = validDate;
       }
-      updateData.date = validDate;
     }
+    if (projectId !== undefined) updateData.projectId = projectId || null;
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 });

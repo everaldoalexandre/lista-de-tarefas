@@ -18,6 +18,6 @@ export default function CurrentDate() {
 
 
   return (
-    <h1 className="text-5xl font-extrabold text-gray-500">{weekday} {day}, <span className="text-gray-300">{month}</span></h1>
+    <h1 className="text-lg font-bold text-gray-500">{weekday} {day}, <span className="text-gray-400">{month}</span></h1>
   );
 }

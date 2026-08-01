@@ -1,63 +1,62 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {DeleteIcon, EditIcon} from './Lucide';
+import { DeleteIcon, EditIcon, CalendarIcon, CopyIcon } from './Lucide';
 import { DragDropContext, Draggable, Droppable, DropResult } from '@hello-pangea/dnd'
-import {useSession} from "@/lib/auth-client"
+import { useSession } from "@/lib/auth-client"
 import { toast } from "sonner"
 
-type List =  { id: number, description: string; date: Date; status: string; userId: string };
+type Task = { id: string, description: string; date: Date | null; status: string; order: number; projectId: string | null; userId: string };
 
-export default function AddTask() {
-  const [list, setList] = useState<List[]>([]);
+export default function AddTask({ projectId }: { projectId: string }) {
+  const [list, setList] = useState<Task[]>([]);
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
-  const [taskSelected, setTaskSelected] = useState<List | null>(null);
-  
+  const [showDateInput, setShowDateInput] = useState(false);
+  const [taskSelected, setTaskSelected] = useState<Task | null>(null);
+
   const [showModalDelete, setShowModalDelete] = useState(false);
   const [showModalEdit, setShowModalEdit] = useState(false);
-  const [taskEdit, setTaskEdit] = useState<List | null>(null);
+  const [taskEdit, setTaskEdit] = useState<Task | null>(null);
   const [descriptionEdit, setDescriptionEdit] = useState('');
   const [dateEdit, setDateEdit] = useState('');
 
-
-    useEffect(() => {
+  useEffect(() => {
     toloadTask();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
 
-  }, []);
-
-  function openModalEdit(task: List) {
+  function openModalEdit(task: Task) {
     setTaskEdit(task);
     setDescriptionEdit(task.description);
-    setDateEdit(task.date.toISOString().slice(0,10));
+    setDateEdit(task.date ? task.date.toISOString().slice(0, 10) : '');
     setShowModalEdit(true);
   }
 
-  async function saveEdit(taskEdit: List, description: string, date: string) {
+  async function saveEdit(taskEdit: Task, description: string, date: string) {
     try {
       const response = await fetch('/api/tasks', {
-        method: 'PUT', 
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: taskEdit.id,
           description,
-          date: new Date(date + 'Z-3:00'),
+          date: date ? new Date(date + 'T00:00:00-03:00').toISOString() : null,
         }),
       });
-
-      toast.success("Task edit!")
 
       if (!response.ok) {
         throw new Error('Error updating task');
       }
 
+      toast.success("Task edit!")
       toloadTask();
     } catch (error) {
       alert(error);
     }
   }
 
-  async function handleOnDragEnd(result: DropResult){
+  async function handleOnDragEnd(result: DropResult) {
     if (!result.destination) return;
 
     const newList = Array.from(list);
@@ -71,11 +70,11 @@ export default function AddTask() {
 
       await fetch('/api/tasks', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json'},
-        body: JSON.stringify({order}),
-        
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order }),
+
       });
-    }catch (error) {
+    } catch (error) {
       console.error('Error saving new order:', error);
       toast.error('Unable to save new order. Please reload the page.');
       toloadTask();
@@ -86,7 +85,7 @@ export default function AddTask() {
     const newList = [...list];
     newList[id].status = newList[id].status === 'pending' ? 'completed' : 'pending';
     setList(newList);
-    
+
     const task = newList[id];
     fetch('/api/tasks', {
       method: 'PUT',
@@ -103,25 +102,35 @@ export default function AddTask() {
     toloadTask();
   }
 
-  function confirmedDelete(task: List) {
+  function confirmedDelete(task: Task) {
     setTaskSelected(task);
     setShowModalDelete(true);
   }
 
+  async function copyTask(description: string) {
+    try {
+      await navigator.clipboard.writeText(description);
+      toast.success("Task copied!")
+    } catch (error) {
+      console.error('Error copying task:', error);
+      toast.error('Unable to copy the task.');
+    }
+  }
+
   async function deleteConfirmedTask() {
-  if (!taskSelected) return;
+    if (!taskSelected) return;
 
-  const response = await fetch('/api/tasks', {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: taskSelected.id }),
-  });
-  toast.success("Task deleted!")
+    const response = await fetch('/api/tasks', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: taskSelected.id }),
+    });
+    toast.success("Task deleted!")
 
-  if (response.ok) {
-    setShowModalDelete(false);
-    setTaskSelected(null);
-    toloadTask();
+    if (response.ok) {
+      setShowModalDelete(false);
+      setTaskSelected(null);
+      toloadTask();
     } else {
       toast.error('Error deleting task');
     }
@@ -129,23 +138,23 @@ export default function AddTask() {
 
   async function toloadTask() {
 
-    const response = await fetch('/api/tasks');
+    const response = await fetch(`/api/tasks?projectId=${projectId}`);
 
     if (response.ok) {
-      const date: { list: { id: number, description: string; date: string; status: string; order: number; userId: string;}[] } = await response.json();
+      const data: { list: { id: string, description: string; date: string | null; status: string; order: number; projectId: string | null; userId: string; }[] } = await response.json();
 
-      const listConverted: List[] = date.list.map((item) => ({
+      const listConverted: Task[] = data.list.map((item) => ({
         ...item,
-        date: new Date(item.date),
+        date: item.date ? new Date(item.date) : null,
       }));
 
       setList(listConverted);
-    } else{
+    } else {
       console.error('Error loading tasks', response.statusText);
     }
   }
 
-  const {data: session, isPending} = useSession()
+  const { data: session, isPending } = useSession()
 
   async function addTask(e: React.FormEvent) {
     e.preventDefault();
@@ -159,18 +168,18 @@ export default function AddTask() {
       toast.error('Unauthenticated user. Please log in.');
       return;
     }
-  
-    if (!date.trim()) {
-      toast.error("Please fill in all fields.")
-    return;
+
+    if (!description.trim()) {
+      toast.error("Please fill in the task description.")
+      return;
     }
 
     try {
       const newTask = {
         description: description.trim(),
         status: 'pending',
-        date: new Date(date + 'T00:00:00-03:00').toISOString(),
-        ordem: 1,
+        date: date ? new Date(date + 'T00:00:00-03:00').toISOString() : undefined,
+        projectId,
         userId: session.user.id
       };
 
@@ -185,44 +194,58 @@ export default function AddTask() {
       if (response.ok) {
         setDescription('');
         setDate('');
+        setShowDateInput(false);
         await toloadTask();
       } else {
         alert(result.error || 'Error adding task. Please try again.');
       }
-      
+
     } catch (error) {
       console.error('Request error:', error);
       toast.error('Connection error. Please try again.');
     }
   }
-    return (
+
+  return (
     <div className="flex flex-col justify-items-center gap-4 p-4">
-      <form onSubmit={addTask} className="flex gap-2 bg-white p-3 rounded-2xl">
+      <form onSubmit={addTask} className="flex flex-col sm:flex-row gap-2 bg-white p-3 rounded-2xl w-full max-w-2xl">
         <input
           type="text"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Enter a new task"
-          className="p-2 rounded w-full text-gray-500 lg:min-w-2xl md:min-w-1xl xl:min-w-3xl"
+          className="p-2 rounded w-full text-gray-500"
         />
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="p-1 rounded bg-gray-200 text-gray-500"
-        />
-        <button type="submit" className="bg-gray-200 text-gray-500 px-4 py-2 rounded-2xl">
-          +
-        </button>
+        <div className="flex gap-2 items-center sm:flex-none">
+          <button
+            type="button"
+            onClick={() => setShowDateInput(!showDateInput)}
+            className="bg-gray-200 text-gray-500 p-2 rounded-2xl shrink-0"
+            title="Add date"
+          >
+            <CalendarIcon />
+          </button>
+          {showDateInput && (
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="p-1 rounded bg-gray-200 text-gray-500 flex-1 sm:flex-none sm:w-40"
+            />
+          )}
+          <button type="submit" className="bg-gray-200 text-gray-500 px-4 py-2 rounded-2xl shrink-0">
+            +
+          </button>
+        </div>
       </form>
-      
+
       <DragDropContext onDragEnd={handleOnDragEnd}>
         <Droppable droppableId="tasks">
           {(provided) => (
-            <ul 
-            {...provided.droppableProps} 
-            ref={provided.innerRef} 
-            className="flex flex-col gap-2 ">
+            <ul
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+              className="flex flex-col gap-2 w-full max-w-2xl">
               {list.map((newTask, id) => (
                 <Draggable key={newTask.id} draggableId={String(newTask.id)} index={id}>
                   {(provided) => (
@@ -230,22 +253,29 @@ export default function AddTask() {
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={`grid grid-cols-[40px_2fr_100px_30px_30px] items-center gap-2 p-2 rounded ${newTask.status === 'completed' ? 'bg-gray-200 text-gray-500 line-through' : 'bg-white text-black'}`}>
-                        <input type="checkbox" className="w-5 h5 accent-gray-600" checked={newTask.status === 'completed'}
-                          onChange={() => tomarkTask(id)} />
-                        <span className="break-all lg:min-w-1xl">{newTask.description}</span>
-                        <span className="text-right lg:max-w-0.5">
-                          {newTask.date.toLocaleDateString('en-US', { timeZone: 'America/Sao_Paulo' })}
-                        </span>
-                        <div className='lg:flex justify-items-end'>
-                          <button
-                            className='bg-white text-gray-500 rounded hover:bg-gray-200 justify-items-center'
-                            onClick={() => openModalEdit(newTask)}
-                          >
-                            <EditIcon/>
-                          </button>
-                          <button className='bg-white text-gray-500 rounded hover:bg-gray-200 justify-items-center' onClick={() => confirmedDelete(newTask)}> <DeleteIcon /></button>
-                        </div>
+                      className={`grid grid-cols-[30px_1fr_24px_24px_24px] sm:grid-cols-[40px_2fr_100px_30px_30px_30px] items-center gap-2 p-2 rounded ${newTask.status === 'completed' ? 'bg-gray-200 text-gray-500 line-through' : 'bg-white text-black'}`}>
+                      <input type="checkbox" className="w-5 h5 accent-gray-600" checked={newTask.status === 'completed'}
+                        onChange={() => tomarkTask(id)} />
+                      <span className="break-all">{newTask.description}</span>
+                      <span className="hidden sm:block text-right">
+                        {newTask.date ? newTask.date.toLocaleDateString('en-US', { timeZone: 'America/Sao_Paulo' }) : ''}
+                      </span>
+                      <div className='sm:flex sm:justify-items-end flex sm:flex-row gap-1'>
+                        <button
+                          className='text-gray-500 rounded hover:bg-gray-200 justify-items-center'
+                          onClick={() => openModalEdit(newTask)}
+                        >
+                          <EditIcon />
+                        </button>
+                        <button
+                          className='text-gray-500 rounded hover:bg-gray-200 justify-items-center'
+                          onClick={() => copyTask(newTask.description)}
+                          title="Copy task"
+                        >
+                          <CopyIcon />
+                        </button>
+                        <button className='text-gray-500 rounded hover:bg-gray-200 justify-items-center' onClick={() => confirmedDelete(newTask)}> <DeleteIcon /></button>
+                      </div>
                     </li>
                   )}
                 </Draggable>
@@ -260,15 +290,15 @@ export default function AddTask() {
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
             <h2 className="text-lg text-gray-500 font-bold mb-4">Confirm deletion</h2>
             <p className='text-gray-500'>Are you sure you want to delete the task?</p>
-            
+
             <div className="mt-6 flex justify-end gap-4">
-              <button 
+              <button
                 className="px-4 py-2 rounded font-bold text-gray-500 bg-gray-300 hover:bg-gray-400"
                 onClick={() => setShowModalDelete(false)}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 className="px-4 py-2 rounded font-bold bg-gray-800 text-white hover:bg-gray-950"
                 onClick={deleteConfirmedTask}
               >
@@ -282,7 +312,7 @@ export default function AddTask() {
         <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
             <h2 className="text-lg text-gray-500 font-bold mb-4">Edit Task</h2>
-            
+
             <input
               type="text"
               value={descriptionEdit}
