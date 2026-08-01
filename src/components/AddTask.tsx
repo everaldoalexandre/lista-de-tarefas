@@ -13,6 +13,7 @@ export default function AddTask({ projectId }: { projectId: string }) {
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
   const [showDateInput, setShowDateInput] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
   const [taskSelected, setTaskSelected] = useState<Task | null>(null);
 
   const [showModalDelete, setShowModalDelete] = useState(false);
@@ -81,22 +82,18 @@ export default function AddTask({ projectId }: { projectId: string }) {
     }
   }
 
-  function tomarkTask(id: number) {
-    const newList = [...list];
-    newList[id].status = newList[id].status === 'pending' ? 'completed' : 'pending';
+  function tomarkTask(task: Task) {
+    const newStatus = task.status === 'pending' ? 'completed' : 'pending';
+    const newList = list.map((t) => t.id === task.id ? { ...t, status: newStatus } : t);
     setList(newList);
 
-    const task = newList[id];
     fetch('/api/tasks', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: task.id, status: task.status }),
+      body: JSON.stringify({ id: task.id, status: newStatus }),
     }).catch(() => {
       toast.error('Error updating status');
-
-      const revertList = [...newList];
-      revertList[id].status = revertList[id].status === 'pending' ? 'completed' : 'pending';
-      setList(revertList);
+      setList(list);
     });
 
     toloadTask();
@@ -246,16 +243,16 @@ export default function AddTask({ projectId }: { projectId: string }) {
               {...provided.droppableProps}
               ref={provided.innerRef}
               className="flex flex-col gap-2 w-full max-w-2xl">
-              {list.map((newTask, id) => (
+              {list.filter((t) => t.status === 'pending').map((newTask, id) => (
                 <Draggable key={newTask.id} draggableId={String(newTask.id)} index={id}>
                   {(provided) => (
                     <li
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={`grid grid-cols-[30px_1fr_24px_24px_24px] sm:grid-cols-[40px_2fr_100px_30px_30px_30px] items-center gap-2 p-2 rounded ${newTask.status === 'completed' ? 'bg-gray-200 text-gray-500 line-through' : 'bg-white text-black'}`}>
-                      <input type="checkbox" className="w-5 h5 accent-gray-600" checked={newTask.status === 'completed'}
-                        onChange={() => tomarkTask(id)} />
+                      className={`grid grid-cols-[30px_1fr_24px_24px_24px] sm:grid-cols-[40px_2fr_100px_30px_30px_30px] items-center gap-2 p-2 rounded bg-white text-black`}>
+                      <input type="checkbox" className="w-5 h5 accent-gray-600" checked={false}
+                        onChange={() => tomarkTask(newTask)} />
                       <span className="break-all">{newTask.description}</span>
                       <span className="hidden sm:block text-right">
                         {newTask.date ? newTask.date.toLocaleDateString('en-US', { timeZone: 'America/Sao_Paulo' }) : ''}
@@ -285,6 +282,51 @@ export default function AddTask({ projectId }: { projectId: string }) {
           )}
         </Droppable>
       </DragDropContext>
+
+      {list.filter((t) => t.status === 'completed').length > 0 && (
+        <div className="w-full max-w-2xl">
+          <button
+            type="button"
+            onClick={() => setShowCompleted(!showCompleted)}
+            className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-white text-gray-500 font-bold hover:bg-gray-200"
+          >
+            <span>Completed ({list.filter((t) => t.status === 'completed').length})</span>
+            <span>{showCompleted ? '−' : '+'}</span>
+          </button>
+          {showCompleted && (
+            <ul className="flex flex-col gap-2 mt-2">
+              {list.filter((t) => t.status === 'completed').map((newTask) => (
+                <li
+                  key={newTask.id}
+                  className={`grid grid-cols-[30px_1fr_24px_24px_24px] sm:grid-cols-[40px_2fr_100px_30px_30px_30px] items-center gap-2 p-2 rounded bg-gray-200 text-gray-500 line-through`}>
+                  <input type="checkbox" className="w-5 h5 accent-gray-600" checked={true}
+                    onChange={() => tomarkTask(newTask)} />
+                  <span className="break-all">{newTask.description}</span>
+                  <span className="hidden sm:block text-right">
+                    {newTask.date ? newTask.date.toLocaleDateString('en-US', { timeZone: 'America/Sao_Paulo' }) : ''}
+                  </span>
+                  <div className='sm:flex sm:justify-items-end flex sm:flex-row gap-1'>
+                    <button
+                      className='rounded hover:bg-gray-300 justify-items-center'
+                      onClick={() => openModalEdit(newTask)}
+                    >
+                      <EditIcon />
+                    </button>
+                    <button
+                      className='rounded hover:bg-gray-300 justify-items-center'
+                      onClick={() => copyTask(newTask.description)}
+                      title="Copy task"
+                    >
+                      <CopyIcon />
+                    </button>
+                    <button className='rounded hover:bg-gray-300 justify-items-center' onClick={() => confirmedDelete(newTask)}> <DeleteIcon /></button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
       {showModalDelete && (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-50 bg-opacity-40 z-50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
