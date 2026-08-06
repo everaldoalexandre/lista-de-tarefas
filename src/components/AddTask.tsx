@@ -27,7 +27,7 @@ export default function AddTask({ projectId }: { projectId: string }) {
     const el = descriptionRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight}px`;
+    el.style.height = `${Math.max(el.scrollHeight, 56)}px`;
   }
 
   useEffect(() => {
@@ -225,7 +225,8 @@ export default function AddTask({ projectId }: { projectId: string }) {
           }}
           placeholder="Enter a new task"
           rows={1}
-          className="p-2 rounded w-full text-gray-500 resize-none overflow-hidden min-h-14 sm:min-h-12 md:min-h-14"
+          style={{ minHeight: '56px' }}
+          className="p-2 rounded w-full text-gray-500 resize-none overflow-hidden"
         />
         <div className="flex gap-2 items-center sm:flex-none">
           <button
