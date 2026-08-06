@@ -27,7 +27,7 @@ export default function AddTask({ projectId }: { projectId: string }) {
     const el = descriptionRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    el.style.height = `${Math.max(el.scrollHeight, 56)}px`;
+    el.style.height = `${Math.max(el.scrollHeight, 64)}px`;
   }
 
   useEffect(() => {
@@ -225,7 +225,7 @@ export default function AddTask({ projectId }: { projectId: string }) {
           }}
           placeholder="Enter a new task"
           rows={1}
-          style={{ minHeight: '56px' }}
+          style={{ minHeight: '64px' }}
           className="p-2 rounded w-full text-gray-500 resize-none overflow-hidden"
         />
         <div className="flex gap-2 items-center sm:flex-none">
@@ -257,7 +257,7 @@ export default function AddTask({ projectId }: { projectId: string }) {
             <ul
               {...provided.droppableProps}
               ref={provided.innerRef}
-              className="flex flex-col gap-2 w-full max-w-2xl min-h-[52px]">
+              className="flex flex-col gap-2 w-full max-w-2xl">
               {list.filter((t) => t.status === 'pending').map((newTask, id) => (
                 <Draggable key={newTask.id} draggableId={String(newTask.id)} index={id}>
                   {(provided) => (
