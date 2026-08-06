@@ -214,7 +214,7 @@ export default function AddTask({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="flex flex-col justify-items-center gap-4 p-4">
+    <div className="flex flex-col justify-items-center gap-4 p-4 min-h-[180px]">
       <form onSubmit={addTask} className="flex flex-col sm:flex-row gap-2 bg-white p-3 rounded-2xl w-full max-w-2xl">
         <textarea
           ref={descriptionRef}
@@ -257,7 +257,7 @@ export default function AddTask({ projectId }: { projectId: string }) {
             <ul
               {...provided.droppableProps}
               ref={provided.innerRef}
-              className="flex flex-col gap-2 w-full max-w-2xl min-h-[52px]">
+              className="flex flex-col gap-2 w-full max-w-2xl">
               {list.filter((t) => t.status === 'pending').map((newTask, id) => (
                 <Draggable key={newTask.id} draggableId={String(newTask.id)} index={id}>
                   {(provided) => (
