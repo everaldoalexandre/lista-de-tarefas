@@ -5,7 +5,8 @@ import Logout from './Logout';
 import CurrentDate from './CurrentData';
 import Projects from './Projects';
 import AddTask from './AddTask';
-import { MenuIcon, ChevronLeftIcon, ChevronRightIcon, DeleteIcon } from './Lucide';
+import { MenuIcon, ChevronLeftIcon, ChevronRightIcon, DeleteIcon, EditIcon } from './Lucide';
+import { toast } from "sonner";
 
 type Project = { id: string; name: string; userId: string; createdAt: string; pendingCount?: number };
 
@@ -13,10 +14,69 @@ export default function HomeContent() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [showModalEdit, setShowModalEdit] = useState(false);
+  const [nameEdit, setNameEdit] = useState('');
+  const [showModalDelete, setShowModalDelete] = useState(false);
 
   function handleSelectProject(project: Project | null) {
     setSelectedProject(project);
     setMobileSidebarOpen(false);
+  }
+
+  function openModalEdit() {
+    if (!selectedProject) return;
+    setNameEdit(selectedProject.name);
+    setShowModalEdit(true);
+  }
+
+  async function saveEdit() {
+    if (!selectedProject) return;
+
+    if (!nameEdit.trim()) {
+      toast.error("Please fill in the project name.");
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: selectedProject.id, name: nameEdit.trim() }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast.success("Project updated!")
+        setSelectedProject(result.project);
+        setShowModalEdit(false);
+        window.dispatchEvent(new Event('projects-changed'));
+      } else {
+        toast.error(result.error || 'Error updating project.');
+      }
+    } catch (error) {
+      console.error('Request error:', error);
+      toast.error('Connection error. Please try again.');
+    }
+  }
+
+  async function deleteProject() {
+    if (!selectedProject) return;
+
+    const response = await fetch('/api/projects', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: selectedProject.id }),
+    });
+
+    if (response.ok) {
+      toast.success("Project deleted!")
+      setShowModalDelete(false);
+      setSelectedProject(null);
+      window.dispatchEvent(new Event('projects-changed'));
+    } else {
+      toast.error('Error deleting project');
+    }
   }
 
   return (
@@ -81,13 +141,86 @@ export default function HomeContent() {
         </nav>
         {selectedProject ? (
           <div className="w-full flex flex-col items-center pt-6 md:pt-10">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-500 text-center mb-4">{selectedProject.name}</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-500 text-center">{selectedProject.name}</h2>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-gray-600"
+                onClick={openModalEdit}
+                title="Edit project name"
+              >
+                <EditIcon />
+              </button>
+              <button
+                type="button"
+                className="text-gray-400 hover:text-gray-600"
+                onClick={() => setShowModalDelete(true)}
+                title="Delete project"
+              >
+                <DeleteIcon />
+              </button>
+            </div>
             <AddTask projectId={selectedProject.id} />
           </div>
         ) : (
           <p className="text-gray-400 font-bold pt-10">Select a project to see and manage its tasks.</p>
         )}
       </main>
+
+      {showModalEdit && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
+            <h2 className="text-lg text-gray-500 font-bold mb-4">Edit project</h2>
+
+            <input
+              type="text"
+              value={nameEdit}
+              onChange={(e) => setNameEdit(e.target.value)}
+              placeholder="Project name"
+              className="w-full text-gray-500 p-2 rounded mb-4 border border-gray-300"
+            />
+
+            <div className="flex justify-end gap-4">
+              <button
+                className="px-4 py-2 rounded font-bold text-gray-500 bg-gray-300 hover:bg-gray-400"
+                onClick={() => setShowModalEdit(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded font-bold bg-gray-800 text-white hover:bg-gray-950"
+                onClick={saveEdit}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showModalDelete && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-50 bg-opacity-40 z-50">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
+            <h2 className="text-lg text-gray-500 font-bold mb-4">Confirm deletion</h2>
+            <p className="text-gray-500">Are you sure you want to delete the project {selectedProject?.name}? Its tasks will also be deleted.</p>
+
+            <div className="mt-6 flex justify-end gap-4">
+              <button
+                className="px-4 py-2 rounded font-bold text-gray-500 bg-gray-300 hover:bg-gray-400"
+                onClick={() => setShowModalDelete(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded font-bold bg-gray-800 text-white hover:bg-gray-950"
+                onClick={deleteProject}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

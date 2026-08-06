@@ -257,7 +257,7 @@ export default function AddTask({ projectId }: { projectId: string }) {
             <ul
               {...provided.droppableProps}
               ref={provided.innerRef}
-              className="flex flex-col gap-2 w-full max-w-2xl">
+              className="flex flex-col gap-2 w-full max-w-2xl min-h-[52px]">
               {list.filter((t) => t.status === 'pending').map((newTask, id) => (
                 <Draggable key={newTask.id} draggableId={String(newTask.id)} index={id}>
                   {(provided) => (
