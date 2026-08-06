@@ -33,11 +33,20 @@ export async function GET() {
       },
       orderBy: { createdAt: 'asc' },
       include: {
-        _count: { select: { list: true } }
+        _count: {
+          select: {
+            list: { where: { status: 'pending' } }
+          }
+        }
       }
     });
 
-    return NextResponse.json({ projects });
+    const projectsEnd = projects.map(({ _count, ...project }) => ({
+      ...project,
+      pendingCount: _count.list,
+    }));
+
+    return NextResponse.json({ projects: projectsEnd });
   } catch (error) {
     console.error('Error when searching for projects:', error);
     return NextResponse.json({ error: 'Error when searching for projects' }, { status: 500 });

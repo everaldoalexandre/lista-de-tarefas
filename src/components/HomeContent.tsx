@@ -7,7 +7,7 @@ import Projects from './Projects';
 import AddTask from './AddTask';
 import { MenuIcon, ChevronLeftIcon, ChevronRightIcon, DeleteIcon } from './Lucide';
 
-type Project = { id: string; name: string; userId: string; createdAt: string; _count?: { list: number } };
+type Project = { id: string; name: string; userId: string; createdAt: string; pendingCount?: number };
 
 export default function HomeContent() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);

@@ -154,6 +154,7 @@ export default function AddTask({ projectId }: { projectId: string }) {
       }));
 
       setList(listConverted);
+      window.dispatchEvent(new Event('tasks-changed'));
     } else {
       console.error('Error loading tasks', response.statusText);
     }
@@ -224,7 +225,7 @@ export default function AddTask({ projectId }: { projectId: string }) {
           }}
           placeholder="Enter a new task"
           rows={1}
-          className="p-2 rounded w-full text-gray-500 resize-none overflow-hidden min-h-11"
+          className="p-2 rounded w-full text-gray-500 resize-none overflow-hidden min-h-14 sm:min-h-12 md:min-h-14"
         />
         <div className="flex gap-2 items-center sm:flex-none">
           <button

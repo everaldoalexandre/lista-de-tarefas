@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { toast } from "sonner";
 import { DeleteIcon, EditIcon, PlusIcon } from './Lucide';
 
-type Project = { id: string; name: string; userId: string; createdAt: string; _count?: { list: number } };
+type Project = { id: string; name: string; userId: string; createdAt: string; pendingCount?: number };
 
 export default function Projects({ selectedProjectId, onSelectProject, collapsed }: { selectedProjectId: string | null; onSelectProject: (project: Project | null) => void; collapsed?: boolean }) {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -18,6 +18,8 @@ export default function Projects({ selectedProjectId, onSelectProject, collapsed
 
   useEffect(() => {
     loadProjects();
+    window.addEventListener('tasks-changed', loadProjects);
+    return () => window.removeEventListener('tasks-changed', loadProjects);
   }, []);
 
   async function loadProjects() {
@@ -151,7 +153,7 @@ export default function Projects({ selectedProjectId, onSelectProject, collapsed
                 ? 'flex items-center justify-center w-12 h-12 rounded-full font-bold bg-white text-gray-500 hover:bg-gray-200'
                 : `flex-1 text-left px-4 py-2 rounded-xl font-bold ${selectedProjectId === project.id ? 'bg-gray-800 text-white' : 'bg-white text-gray-500 hover:bg-gray-200'}`}
             >
-              {collapsed ? project.name.charAt(0).toUpperCase() : `${project.name} (${project._count?.list ?? 0})`}
+              {collapsed ? project.name.charAt(0).toUpperCase() : `${project.name} (${project.pendingCount ?? 0})`}
             </button>
             {!collapsed && (
               <div className="flex flex-col gap-1">
