@@ -15,6 +15,7 @@ export default function AddTask({ projectId }: { projectId: string }) {
   const [showDateInput, setShowDateInput] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
   const [taskSelected, setTaskSelected] = useState<Task | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
   const [showModalDelete, setShowModalDelete] = useState(false);
@@ -180,6 +181,10 @@ export default function AddTask({ projectId }: { projectId: string }) {
       return;
     }
 
+    if (submitting) return;
+
+    setSubmitting(true);
+
     try {
       const newTask = {
         description: description.trim(),
@@ -210,6 +215,8 @@ export default function AddTask({ projectId }: { projectId: string }) {
     } catch (error) {
       console.error('Request error:', error);
       toast.error('Connection error. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -245,7 +252,7 @@ export default function AddTask({ projectId }: { projectId: string }) {
               className="p-1 rounded bg-gray-200 text-gray-500 flex-1 sm:flex-none sm:w-40"
             />
           )}
-          <button type="submit" className="bg-gray-200 text-gray-500 px-4 py-2 rounded-2xl shrink-0">
+          <button type="submit" disabled={submitting} className="bg-gray-200 text-gray-500 px-4 py-2 rounded-2xl shrink-0 disabled:opacity-50">
             +
           </button>
         </div>
