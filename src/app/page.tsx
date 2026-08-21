@@ -103,7 +103,15 @@ export default function LandingPage() {
 
       <footer className="border-t border-border py-8">
         <p className="text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} Lista de Tarefas. All rights reserved.
+          Desenvolvido por{' '}
+          <a
+            href="https://everaldoalexandre.site"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-foreground underline-offset-4 hover:underline"
+          >
+            Everaldo Alexandre
+          </a>
         </p>
       </footer>
     </div>

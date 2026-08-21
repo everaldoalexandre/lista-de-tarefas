@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Lista de Tarefas",
+  title: "Task Manager",
   description:
     "A simple and fast task manager. Create projects, add tasks with due dates, drag to prioritize and keep everything under control.",
 };
