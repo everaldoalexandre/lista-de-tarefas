@@ -234,8 +234,8 @@ export default function AddTask({ projectId, onTasksChanged }: { projectId: stri
   }
 
   return (
-    <div className="flex flex-col justify-items-center gap-4 p-4 min-h-[180px]">
-      <form onSubmit={addTask} className="flex flex-col sm:flex-row gap-2 bg-white p-3 rounded-2xl w-full max-w-2xl">
+    <div className="flex flex-col gap-4 p-4 min-h-[180px] w-full max-w-2xl">
+      <form onSubmit={addTask} className="flex flex-col sm:flex-row gap-2 bg-white p-3 rounded-2xl w-full">
         <textarea
           ref={descriptionRef}
           value={description}
@@ -278,7 +278,7 @@ export default function AddTask({ projectId, onTasksChanged }: { projectId: stri
             <ul
               {...provided.droppableProps}
               ref={provided.innerRef}
-              className="flex flex-col gap-2 w-full max-w-2xl">
+              className="flex flex-col gap-2 w-full">
               {list.filter((t) => t.status === 'pending').map((newTask, id) => (
                 <Draggable key={newTask.id} draggableId={String(newTask.id)} index={id}>
                   {(provided) => (
@@ -331,7 +331,7 @@ export default function AddTask({ projectId, onTasksChanged }: { projectId: stri
       </DragDropContext>
 
       {list.filter((t) => t.status === 'completed').length > 0 && (
-        <div className="w-full max-w-2xl">
+        <div className="w-full">
           <button
             type="button"
             onClick={() => setShowCompleted(!showCompleted)}
