@@ -1,36 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from "sonner";
 import { PlusIcon } from './Lucide';
+import type { Project } from '@/type/type';
 
-type Project = { id: string; name: string; userId: string; createdAt: string; pendingCount?: number };
-
-export default function Projects({ selectedProjectId, onSelectProject, collapsed }: { selectedProjectId: string | null; onSelectProject: (project: Project | null) => void; collapsed?: boolean }) {
-  const [projects, setProjects] = useState<Project[]>([]);
+export default function Projects({ projects, reloadProjects, selectedProjectId, onSelectProject, collapsed }: { projects: Project[]; reloadProjects: () => Promise<void>; selectedProjectId: string | null; onSelectProject: (project: Project | null) => void; collapsed?: boolean }) {
   const [name, setName] = useState('');
   const [showModalAdd, setShowModalAdd] = useState(false);
-
-  useEffect(() => {
-    loadProjects();
-    window.addEventListener('tasks-changed', loadProjects);
-    window.addEventListener('projects-changed', loadProjects);
-    return () => {
-      window.removeEventListener('tasks-changed', loadProjects);
-      window.removeEventListener('projects-changed', loadProjects);
-    };
-  }, []);
-
-  async function loadProjects() {
-    const response = await fetch('/api/projects');
-
-    if (response.ok) {
-      const data: { projects: Project[] } = await response.json();
-      setProjects(data.projects);
-    } else {
-      console.error('Error loading projects', response.statusText);
-    }
-  }
 
   async function createProject() {
     if (!name.trim()) {
@@ -51,7 +28,7 @@ export default function Projects({ selectedProjectId, onSelectProject, collapsed
         toast.success("Project created!")
         setName('');
         setShowModalAdd(false);
-        await loadProjects();
+        await reloadProjects();
         onSelectProject(result.project);
       } else {
         toast.error(result.error || 'Error creating project.');

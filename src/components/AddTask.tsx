@@ -3,12 +3,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { DeleteIcon, EditIcon, CalendarIcon, CopyIcon } from './Lucide';
 import { DragDropContext, Draggable, Droppable, DropResult } from '@hello-pangea/dnd'
-import { useSession } from "@/lib/auth-client"
+import type { Task } from '@/type/type';
 import { toast } from "sonner"
 
-type Task = { id: string, description: string; date: Date | null; status: string; order: number; projectId: string | null; userId: string };
+function toDateInputValue(date: Date) {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
 
-export default function AddTask({ projectId }: { projectId: string }) {
+export default function AddTask({ projectId, onTasksChanged }: { projectId: string; onTasksChanged: () => void }) {
   const [list, setList] = useState<Task[]>([]);
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
@@ -39,11 +43,16 @@ export default function AddTask({ projectId }: { projectId: string }) {
   function openModalEdit(task: Task) {
     setTaskEdit(task);
     setDescriptionEdit(task.description);
-    setDateEdit(task.date ? task.date.toISOString().slice(0, 10) : '');
+    setDateEdit(task.date ? toDateInputValue(task.date) : '');
     setShowModalEdit(true);
   }
 
   async function saveEdit(taskEdit: Task, description: string, date: string) {
+    if (!description.trim()) {
+      toast.error('Please fill in the task description.');
+      return false;
+    }
+
     try {
       const response = await fetch('/api/tasks', {
         method: 'PUT',
@@ -51,7 +60,7 @@ export default function AddTask({ projectId }: { projectId: string }) {
         body: JSON.stringify({
           id: taskEdit.id,
           description,
-          date: date ? new Date(date + 'T00:00:00-03:00').toISOString() : null,
+          date: date ? new Date(`${date}T00:00:00`).toISOString() : null,
         }),
       });
 
@@ -59,10 +68,13 @@ export default function AddTask({ projectId }: { projectId: string }) {
         throw new Error('Error updating task');
       }
 
-      toast.success("Task edit!")
-      toloadTask();
+      toast.success('Task edited!');
+      await toloadTask();
+      return true;
     } catch (error) {
-      alert(error);
+      console.error('Error updating task:', error);
+      toast.error('Error updating task. Please try again.');
+      return false;
     }
   }
 
@@ -76,14 +88,20 @@ export default function AddTask({ projectId }: { projectId: string }) {
     setList(newList);
 
     try {
-      const order = newList.map(task => task.id);
+      const order = [
+        ...newList.map((task) => task.id),
+        ...list.filter((t) => t.status === 'completed').map((t) => t.id),
+      ];
 
-      await fetch('/api/tasks', {
+      const response = await fetch('/api/tasks', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ order }),
-
       });
+
+      if (!response.ok) {
+        throw new Error('Error saving new order');
+      }
     } catch (error) {
       console.error('Error saving new order:', error);
       toast.error('Unable to save new order. Please reload the page.');
@@ -92,20 +110,23 @@ export default function AddTask({ projectId }: { projectId: string }) {
   }
 
   function tomarkTask(task: Task) {
+    const previousList = list;
     const newStatus = task.status === 'pending' ? 'completed' : 'pending';
-    const newList = list.map((t) => t.id === task.id ? { ...t, status: newStatus } : t);
-    setList(newList);
+    setList(list.map((t) => (t.id === task.id ? { ...t, status: newStatus } : t)));
 
     fetch('/api/tasks', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: task.id, status: newStatus }),
-    }).catch(() => {
-      toast.error('Error updating status');
-      setList(list);
-    });
-
-    toloadTask();
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Error updating status');
+        onTasksChanged();
+      })
+      .catch(() => {
+        toast.error('Error updating status');
+        setList(previousList);
+      });
   }
 
   function confirmedDelete(task: Task) {
@@ -126,25 +147,30 @@ export default function AddTask({ projectId }: { projectId: string }) {
   async function deleteConfirmedTask() {
     if (!taskSelected) return;
 
-    const response = await fetch('/api/tasks', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: taskSelected.id }),
-    });
-    toast.success("Task deleted!")
+    try {
+      const response = await fetch('/api/tasks', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: taskSelected.id }),
+      });
 
-    if (response.ok) {
-      setShowModalDelete(false);
-      setTaskSelected(null);
-      toloadTask();
-    } else {
-      toast.error('Error deleting task');
+      if (response.ok) {
+        toast.success("Task deleted!")
+        setShowModalDelete(false);
+        setTaskSelected(null);
+        await toloadTask();
+      } else {
+        toast.error('Error deleting task');
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast.error('Connection error. Please try again.');
     }
   }
 
   async function toloadTask() {
 
-    const response = await fetch(`/api/tasks?projectId=${projectId}`);
+    const response = await fetch(`/api/tasks?projectId=${encodeURIComponent(projectId)}`);
 
     if (response.ok) {
       const data: { list: { id: string, description: string; date: string | null; status: string; order: number; projectId: string | null; userId: string; }[] } = await response.json();
@@ -155,26 +181,15 @@ export default function AddTask({ projectId }: { projectId: string }) {
       }));
 
       setList(listConverted);
-      window.dispatchEvent(new Event('tasks-changed'));
+      onTasksChanged();
     } else {
+      toast.error('Error loading tasks. Please reload the page.');
       console.error('Error loading tasks', response.statusText);
     }
   }
 
-  const { data: session, isPending } = useSession()
-
   async function addTask(e: React.FormEvent) {
     e.preventDefault();
-
-    if (isPending) {
-      toast.success('Checking authentication...');
-      return;
-    }
-
-    if (!session?.user?.id) {
-      toast.error('Unauthenticated user. Please log in.');
-      return;
-    }
 
     if (!description.trim()) {
       toast.error("Please fill in the task description.")
@@ -188,10 +203,8 @@ export default function AddTask({ projectId }: { projectId: string }) {
     try {
       const newTask = {
         description: description.trim(),
-        status: 'pending',
-        date: date ? new Date(date + 'T00:00:00-03:00').toISOString() : undefined,
+        date: date ? new Date(`${date}T00:00:00`).toISOString() : undefined,
         projectId,
-        userId: session.user.id
       };
 
       const response = await fetch('/api/tasks', {
@@ -209,7 +222,7 @@ export default function AddTask({ projectId }: { projectId: string }) {
         if (descriptionRef.current) descriptionRef.current.style.height = 'auto';
         await toloadTask();
       } else {
-        alert(result.error || 'Error adding task. Please try again.');
+        toast.error(result.error || 'Error adding task. Please try again.');
       }
 
     } catch (error) {
@@ -241,6 +254,7 @@ export default function AddTask({ projectId }: { projectId: string }) {
             onClick={() => setShowDateInput(!showDateInput)}
             className="bg-gray-200 text-gray-500 p-2 rounded-2xl shrink-0"
             title="Add date"
+            aria-label="Add date"
           >
             <CalendarIcon />
           </button>
@@ -252,7 +266,7 @@ export default function AddTask({ projectId }: { projectId: string }) {
               className="p-1 rounded bg-gray-200 text-gray-500 flex-1 sm:flex-none sm:w-40"
             />
           )}
-          <button type="submit" disabled={submitting} className="bg-gray-200 text-gray-500 px-4 py-2 rounded-2xl shrink-0 disabled:opacity-50">
+          <button type="submit" disabled={submitting} className="bg-gray-200 text-gray-500 px-4 py-2 rounded-2xl shrink-0 disabled:opacity-50" aria-label="Add task">
             +
           </button>
         </div>
@@ -273,16 +287,19 @@ export default function AddTask({ projectId }: { projectId: string }) {
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
                       className={`grid grid-cols-[30px_1fr_24px_24px_24px] sm:grid-cols-[40px_2fr_100px_30px_30px_30px] items-center gap-2 p-2 rounded bg-white text-black`}>
-                      <input type="checkbox" className="w-5 h5 accent-gray-600" checked={false}
+                      <input type="checkbox" className="w-5 h-5 accent-gray-600" checked={false}
+                        aria-label="Mark task as completed"
                         onChange={() => tomarkTask(newTask)} />
                       <span className="break-all">{newTask.description}</span>
                       <span className="hidden sm:block text-right">
-                        {newTask.date ? newTask.date.toLocaleDateString('en-US', { timeZone: 'America/Sao_Paulo' }) : ''}
+                        {newTask.date ? newTask.date.toLocaleDateString('en-US') : ''}
                       </span>
                       <div className='sm:flex sm:justify-items-end flex sm:flex-row gap-1'>
                         <button
                           className='text-gray-500 rounded hover:bg-gray-200 justify-items-center'
                           onClick={() => openModalEdit(newTask)}
+                          title="Edit task"
+                          aria-label="Edit task"
                         >
                           <EditIcon />
                         </button>
@@ -290,10 +307,18 @@ export default function AddTask({ projectId }: { projectId: string }) {
                           className='text-gray-500 rounded hover:bg-gray-200 justify-items-center'
                           onClick={() => copyTask(newTask.description)}
                           title="Copy task"
+                          aria-label="Copy task"
                         >
                           <CopyIcon />
                         </button>
-                        <button className='text-gray-500 rounded hover:bg-gray-200 justify-items-center' onClick={() => confirmedDelete(newTask)}> <DeleteIcon /></button>
+                        <button
+                          className='text-gray-500 rounded hover:bg-gray-200 justify-items-center'
+                          onClick={() => confirmedDelete(newTask)}
+                          title="Delete task"
+                          aria-label="Delete task"
+                        >
+                          {' '}<DeleteIcon />
+                        </button>
                       </div>
                     </li>
                   )}
@@ -321,16 +346,19 @@ export default function AddTask({ projectId }: { projectId: string }) {
                 <li
                   key={newTask.id}
                   className={`grid grid-cols-[30px_1fr_24px_24px_24px] sm:grid-cols-[40px_2fr_100px_30px_30px_30px] items-center gap-2 p-2 rounded bg-gray-200 text-gray-500 line-through`}>
-                  <input type="checkbox" className="w-5 h5 accent-gray-600" checked={true}
+                  <input type="checkbox" className="w-5 h-5 accent-gray-600" checked={true}
+                    aria-label="Mark task as pending"
                     onChange={() => tomarkTask(newTask)} />
                   <span className="break-all">{newTask.description}</span>
                   <span className="hidden sm:block text-right">
-                    {newTask.date ? newTask.date.toLocaleDateString('en-US', { timeZone: 'America/Sao_Paulo' }) : ''}
+                    {newTask.date ? newTask.date.toLocaleDateString('en-US') : ''}
                   </span>
                   <div className='sm:flex sm:justify-items-end flex sm:flex-row gap-1'>
                     <button
                       className='rounded hover:bg-gray-300 justify-items-center'
                       onClick={() => openModalEdit(newTask)}
+                      title="Edit task"
+                      aria-label="Edit task"
                     >
                       <EditIcon />
                     </button>
@@ -338,10 +366,18 @@ export default function AddTask({ projectId }: { projectId: string }) {
                       className='rounded hover:bg-gray-300 justify-items-center'
                       onClick={() => copyTask(newTask.description)}
                       title="Copy task"
+                      aria-label="Copy task"
                     >
                       <CopyIcon />
                     </button>
-                    <button className='rounded hover:bg-gray-300 justify-items-center' onClick={() => confirmedDelete(newTask)}> <DeleteIcon /></button>
+                    <button
+                      className='rounded hover:bg-gray-300 justify-items-center'
+                      onClick={() => confirmedDelete(newTask)}
+                      title="Delete task"
+                      aria-label="Delete task"
+                    >
+                      {' '}<DeleteIcon />
+                    </button>
                   </div>
                 </li>
               ))}
@@ -399,11 +435,13 @@ export default function AddTask({ projectId }: { projectId: string }) {
               </button>
               <button
                 className="px-4 py-2 rounded font-bold bg-gray-800 text-white hover:bg-gray-950"
-                onClick={() => {
+                onClick={async () => {
                   if (taskEdit) {
-                    saveEdit(taskEdit, descriptionEdit, dateEdit);
-                    setShowModalEdit(false);
-                    setTaskEdit(null);
+                    const saved = await saveEdit(taskEdit, descriptionEdit, dateEdit);
+                    if (saved) {
+                      setShowModalEdit(false);
+                      setTaskEdit(null);
+                    }
                   }
                 }}
               >

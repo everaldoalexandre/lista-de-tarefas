@@ -1,16 +1,7 @@
 import { auth } from "@/lib/auth";
-import { PrismaClient } from '@/generated/prisma';
+import { prisma, isPrismaError } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { NextResponse } from 'next/server';
-
-const prisma = new PrismaClient();
-
-function isPrismaError(error: unknown): error is { code: string; message: string } {
-  return error !== null &&
-    typeof error === 'object' &&
-    'code' in error &&
-    'message' in error;
-}
 
 //GET
 

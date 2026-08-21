@@ -1,6 +1,6 @@
 'use client'
 
-import { Label } from "@radix-ui/react-label";
+import { Label } from "@/components/ui/label";
 import { GalleryVerticalEnd } from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
@@ -33,11 +33,11 @@ export function RegisterForm({
         }
             
         await authClient.signUp.email({
-            
+
             email,
             password,
             name,
-            callbackURL: "/",
+            callbackURL: "/app",
         },{
             onRequest(){
 
@@ -54,7 +54,7 @@ export function RegisterForm({
             },
             onSuccess(){
                 toast.success("Registration completed successfully!");
-                window.location.href = "/"
+                window.location.href = "/app"
             }
         });
     }
@@ -63,15 +63,14 @@ export function RegisterForm({
             <form onSubmit={handleSubmit}>
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col items-center gap-2">
-                <a
-                    href=""
+                <div
                     className="flex flex-col items-center gap-2 font-medium"
                 >
                     <div className="flex size-8 items-center justify-center rounded-md">
                     <GalleryVerticalEnd className="size-6" />
                     </div>
                     <span className="sr-only">Acme Inc.</span>
-                </a>
+                </div>
                 <h1 className="text-xl font-bold">Enter your details for registration.</h1>
                 </div>
                 <div className="flex flex-col gap-6">
@@ -102,6 +101,7 @@ export function RegisterForm({
                     <Label htmlFor="password">Password</Label>
                     <Input
                     id="password"
+                    autoComplete="new-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     type="password"
@@ -109,9 +109,10 @@ export function RegisterForm({
                     />
                 </div>
                 <div className="grid gap-3">
-                    <Label htmlFor="password">Confirm password</Label>
+                    <Label htmlFor="confirmPassword">Confirm password</Label>
                     <Input
-                    id="password"
+                    id="confirmPassword"
+                    autoComplete="new-password"
                     value={passwordconfirmation}
                     onChange={(e) => setPasswordConfirmation(e.target.value)}
                     type="password"

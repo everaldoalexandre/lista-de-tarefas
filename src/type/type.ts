@@ -3,13 +3,13 @@ export type Project = {
   name: string;
   userId: string;
   createdAt: string;
-  _count?: { list: number };
+  pendingCount?: number;
 };
 
 export type Task = {
   id: string;
   description: string;
-  date: string | null;
+  date: Date | null;
   status: string;
   order: number;
   projectId: string | null;

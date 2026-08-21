@@ -27,15 +27,17 @@ export function LoginForm({
     await authClient.signIn.email({
       email,
       password,
-      callbackURL: "/",
+      callbackURL: "/app",
     }, {
       onRequest() {
-        
+
       },
       onError(ctx) {
 
         if (ctx?.error?.code?.includes('INVALID_EMAIL_OR_PASSWORD')){
           toast.error("Error logging in. Please check your credentials.")
+        } else {
+          toast.error("Failed to log in. Please try again.")
         }
       },
       onSuccess() {
@@ -53,15 +55,12 @@ export function LoginForm({
       <form onSubmit={handleSubmit}>
         <div className="flex flex-col gap-6">
           <div className="flex flex-col items-center gap-2">
-            <a
-              href=""
-              className="flex flex-col items-center gap-2 font-medium"
-            >
+            <div className="flex flex-col items-center gap-2 font-medium">
               <div className="flex size-8 items-center justify-center rounded-md">
                 <GalleryVerticalEnd className="size-6" />
               </div>
               <span className="sr-only">Acme Inc.</span>
-            </a>
+            </div>
             <h1 className="text-xl font-bold">Enter your login details.</h1>
           </div>
           <div className="flex flex-col gap-6">
@@ -69,7 +68,7 @@ export function LoginForm({
               <Label htmlFor="email">E-mail</Label>
               <Input
                 id="email"
-                autoComplete="off"
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 type="email"

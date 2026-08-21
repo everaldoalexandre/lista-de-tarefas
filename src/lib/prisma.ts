@@ -1,20 +1,27 @@
 import { PrismaClient } from '@/generated/prisma'
 
-console.log('Inicializando Prisma Client...');
-
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  log: ['query', 'error', 'warn'],  
-})
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  })
 
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma
-  console.log('Prisma Client configurado para desenvolvimento');
 }
 
-console.log('Prisma Client inicializado com sucesso');
+export function isPrismaError(error: unknown): error is { code: string; message: string } {
+  return (
+    error !== null &&
+    typeof error === 'object' &&
+    'code' in error &&
+    typeof (error as { code: unknown }).code === 'string' &&
+    'message' in error
+  )
+}
 
 export default prisma
