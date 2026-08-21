@@ -45,15 +45,15 @@ export default function Projects({ projects, reloadProjects, selectedProjectId, 
         type="button"
         onClick={() => setShowModalAdd(true)}
         className={collapsed
-          ? 'flex items-center justify-center w-12 h-12 mx-auto bg-gray-800 text-white rounded-2xl font-bold hover:bg-gray-950'
-          : 'flex items-center justify-center gap-2 bg-gray-800 text-white px-4 py-3 rounded-2xl font-bold hover:bg-gray-950'}
+          ? 'flex items-center justify-center w-12 h-12 mx-auto bg-primary text-primary-foreground rounded-xl font-semibold shadow-sm hover:bg-primary/90 transition-colors'
+          : 'flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-3 rounded-xl font-semibold shadow-sm hover:bg-primary/90 transition-colors'}
       >
         <PlusIcon />
         {!collapsed && 'Add project'}
       </button>
 
       {projects.length === 0 && !collapsed && (
-        <p className="text-gray-400 font-bold text-center">No projects yet.</p>
+        <p className="text-muted-foreground font-medium text-center text-sm">No projects yet.</p>
       )}
 
       <ul className={`flex gap-2 overflow-y-auto ${collapsed ? 'flex-col items-center' : 'flex-col'}`}>
@@ -63,31 +63,38 @@ export default function Projects({ projects, reloadProjects, selectedProjectId, 
               type="button"
               onClick={() => onSelectProject(project)}
               className={collapsed
-                ? 'flex items-center justify-center w-12 h-12 rounded-full font-bold bg-white text-gray-500 hover:bg-gray-200'
-                : `flex-1 text-left px-4 py-2 rounded-xl font-bold ${selectedProjectId === project.id ? 'bg-gray-800 text-white' : 'bg-white text-gray-500 hover:bg-gray-200'}`}
+                ? 'flex items-center justify-center w-12 h-12 rounded-full font-bold bg-background border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors'
+                : `w-full text-left px-4 py-2.5 rounded-xl font-semibold transition-colors ${selectedProjectId === project.id ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-background border border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground'}`}
             >
-              {collapsed ? project.name.charAt(0).toUpperCase() : `${project.name} (${project.pendingCount ?? 0})`}
+              {collapsed ? project.name.charAt(0).toUpperCase() : (
+                <span className="flex items-center justify-between gap-2">
+                  <span className="truncate">{project.name}</span>
+                  <span className={`text-xs font-bold rounded-full px-2 py-0.5 ${selectedProjectId === project.id ? 'bg-primary-foreground/20' : 'bg-muted'}`}>
+                    {project.pendingCount ?? 0}
+                  </span>
+                </span>
+              )}
             </button>
           </li>
         ))}
       </ul>
 
       {showModalAdd && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-50 bg-opacity-40 z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-lg text-gray-500 font-bold mb-4">Add project</h2>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <h2 className="text-lg text-foreground font-bold mb-4">Add project</h2>
 
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Project name"
-              className="w-full text-gray-500 p-2 rounded mb-4 border border-gray-300"
+              className="w-full text-foreground p-2 rounded-lg mb-4 border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring"
             />
 
-            <div className="flex justify-end gap-4">
+            <div className="flex justify-end gap-3">
               <button
-                className="px-4 py-2 rounded font-bold text-gray-500 bg-gray-300 hover:bg-gray-400"
+                className="px-4 py-2 rounded-lg font-medium text-foreground bg-accent hover:bg-accent/80 transition-colors"
                 onClick={() => {
                   setShowModalAdd(false);
                   setName('');
@@ -96,7 +103,7 @@ export default function Projects({ projects, reloadProjects, selectedProjectId, 
                 Cancel
               </button>
               <button
-                className="px-4 py-2 rounded font-bold bg-gray-800 text-white hover:bg-gray-950"
+                className="px-4 py-2 rounded-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 onClick={createProject}
               >
                 Create

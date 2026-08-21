@@ -14,9 +14,9 @@ export default function CurrentDate() {
   const day = dayRaw;
 
   return (
-    <h1 suppressHydrationWarning className="text-lg font-bold text-gray-500">
+    <h1 suppressHydrationWarning className="text-lg font-bold text-foreground">
       {weekday} {day},{' '}
-      <span suppressHydrationWarning className="text-gray-400">
+      <span suppressHydrationWarning className="text-muted-foreground">
         {month}
       </span>
     </h1>

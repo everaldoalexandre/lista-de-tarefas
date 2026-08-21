@@ -46,15 +46,15 @@ const steps = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gray-100 font-sans">
+    <div className="min-h-screen bg-background font-sans">
       <SiteNav />
 
       <main>
         <section className="mx-auto max-w-5xl px-4 pt-20 pb-16 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-800">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
             Organize your day, project by project
           </h1>
-          <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
+          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
             A simple and fast task manager. Create projects, add tasks with due dates,
             drag to prioritize and keep everything under control.
           </p>
@@ -69,31 +69,31 @@ export default function LandingPage() {
         </section>
 
         <section className="mx-auto max-w-5xl px-4 pb-16">
-          <h2 className="text-2xl font-bold text-gray-800 text-center mb-8">What you can do</h2>
+          <h2 className="text-2xl font-bold text-foreground text-center mb-8">What you can do</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {features.map((feature) => (
-              <div key={feature.title} className="rounded-2xl bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-                <span className="flex size-10 items-center justify-center rounded-xl bg-gray-900 text-white">
+              <div key={feature.title} className="rounded-2xl bg-card border border-border p-6 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5">
+                <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
                   <feature.icon className="size-5" />
                 </span>
-                <h3 className="mt-4 font-bold text-gray-800">{feature.title}</h3>
-                <p className="mt-1 text-sm text-gray-500">{feature.description}</p>
+                <h3 className="mt-4 font-bold text-foreground">{feature.title}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{feature.description}</p>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="border-t border-gray-200 bg-gray-50 py-16">
+        <section className="border-t border-border bg-muted/40 py-16">
           <div className="mx-auto max-w-5xl px-4">
-            <h2 className="text-2xl font-bold text-gray-800 text-center mb-8">How it works</h2>
+            <h2 className="text-2xl font-bold text-foreground text-center mb-8">How it works</h2>
             <div className="grid gap-4 sm:grid-cols-3">
               {steps.map((step) => (
-                <div key={step.number} className="rounded-2xl bg-white p-6 shadow-sm">
-                  <span className="flex size-9 items-center justify-center rounded-full bg-gray-900 font-bold text-white">
+                <div key={step.number} className="rounded-2xl bg-card border border-border p-6 shadow-sm">
+                  <span className="flex size-9 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">
                     {step.number}
                   </span>
-                  <h3 className="mt-4 font-bold text-gray-800">{step.title}</h3>
-                  <p className="mt-1 text-sm text-gray-500">{step.description}</p>
+                  <h3 className="mt-4 font-bold text-foreground">{step.title}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{step.description}</p>
                 </div>
               ))}
             </div>
@@ -101,8 +101,8 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-gray-200 py-8">
-        <p className="text-center text-sm text-gray-400">
+      <footer className="border-t border-border py-8">
+        <p className="text-center text-sm text-muted-foreground">
           © {new Date().getFullYear()} Lista de Tarefas. All rights reserved.
         </p>
       </footer>

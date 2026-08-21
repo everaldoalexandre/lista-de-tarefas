@@ -15,13 +15,13 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="bg-gray-100 flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
+    <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
       <div className="w-full max-w-sm">
         <LoginForm />
       </div>
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-muted-foreground">
         Don&apos;t have an account?{' '}
-        <Link href="/register" className="font-bold text-gray-800 underline-offset-4 hover:underline">
+        <Link href="/register" className="font-bold text-foreground underline-offset-4 hover:underline">
           Register
         </Link>
       </p>

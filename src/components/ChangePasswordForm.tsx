@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +9,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -69,60 +67,53 @@ export default function ChangePasswordForm() {
   }
 
   return (
-    <div className="bg-gray-100 flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-gray-800">Change password</CardTitle>
-          <CardDescription>
-            Update your password. Other active sessions will be signed out.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="currentPassword">Current password</Label>
-              <Input
-                id="currentPassword"
-                type="password"
-                autoComplete="current-password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Current password"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="newPassword">New password</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                autoComplete="new-password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="At least 8 characters"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="confirmNewPassword">Confirm new password</Label>
-              <Input
-                id="confirmNewPassword"
-                type="password"
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repeat the new password"
-              />
-            </div>
-            <Button type="submit" disabled={submitting} className="w-full">
-              {submitting ? 'Saving...' : 'Save new password'}
-            </Button>
-          </form>
-        </CardContent>
-        <CardFooter>
-          <Link href="/app" className="text-sm font-bold text-gray-500 underline-offset-4 hover:underline">
-            Back to app
-          </Link>
-        </CardFooter>
-      </Card>
-    </div>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Security</CardTitle>
+        <CardDescription>
+          Update your password. Other active sessions will be signed out.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="currentPassword">Current password</Label>
+            <Input
+              id="currentPassword"
+              type="password"
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              placeholder="Current password"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="newPassword">New password</Label>
+            <Input
+              id="newPassword"
+              type="password"
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="At least 8 characters"
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="confirmNewPassword">Confirm new password</Label>
+            <Input
+              id="confirmNewPassword"
+              type="password"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Repeat the new password"
+            />
+          </div>
+          <Button type="submit" disabled={submitting} className="w-full">
+            {submitting ? 'Saving...' : 'Save new password'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

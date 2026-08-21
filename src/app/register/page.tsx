@@ -14,13 +14,13 @@ export default async function RegisterPage() {
   }
 
   return (
-    <div className="bg-white flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
+    <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
       <div className="w-full max-w-sm">
         <RegisterForm />
       </div>
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-muted-foreground">
         Already have an account?{' '}
-        <Link href="/login" className="font-bold text-gray-800 underline-offset-4 hover:underline">
+        <Link href="/login" className="font-bold text-foreground underline-offset-4 hover:underline">
           Sign in
         </Link>
       </p>

@@ -1,4 +1,4 @@
-import ChangePasswordForm from "@/components/ChangePasswordForm";
+import SettingsContent from "@/components/SettingsContent";
 
 export const metadata = {
   title: "Settings | Lista de Tarefas",
@@ -6,6 +6,6 @@ export const metadata = {
 
 export default function SettingsPage() {
   return (
-    <ChangePasswordForm />
+    <SettingsContent />
   );
 }

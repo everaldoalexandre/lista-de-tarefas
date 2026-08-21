@@ -235,7 +235,7 @@ export default function AddTask({ projectId, onTasksChanged }: { projectId: stri
 
   return (
     <div className="flex flex-col gap-4 p-4 min-h-[180px] w-full max-w-2xl">
-      <form onSubmit={addTask} className="flex flex-col sm:flex-row gap-2 bg-white p-3 rounded-2xl w-full">
+      <form onSubmit={addTask} className="flex flex-col sm:flex-row gap-2 bg-card border border-border shadow-sm p-3 rounded-2xl w-full">
         <textarea
           ref={descriptionRef}
           value={description}
@@ -246,13 +246,13 @@ export default function AddTask({ projectId, onTasksChanged }: { projectId: stri
           placeholder="Enter a new task"
           rows={1}
           style={{ minHeight: '64px' }}
-          className="p-2 rounded w-full text-gray-500 resize-none overflow-hidden"
+          className="p-2 rounded-lg w-full text-foreground placeholder:text-muted-foreground resize-none overflow-hidden bg-transparent outline-none"
         />
         <div className="flex gap-2 items-center sm:flex-none">
           <button
             type="button"
             onClick={() => setShowDateInput(!showDateInput)}
-            className="bg-gray-200 text-gray-500 p-2 rounded-2xl shrink-0"
+            className="bg-accent text-accent-foreground hover:bg-accent/80 p-2 rounded-xl shrink-0 transition-colors"
             title="Add date"
             aria-label="Add date"
           >
@@ -263,10 +263,10 @@ export default function AddTask({ projectId, onTasksChanged }: { projectId: stri
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="p-1 rounded bg-gray-200 text-gray-500 flex-1 sm:flex-none sm:w-40"
+              className="p-1 rounded-lg bg-accent text-foreground flex-1 sm:flex-none sm:w-40"
             />
           )}
-          <button type="submit" disabled={submitting} className="bg-gray-200 text-gray-500 px-4 py-2 rounded-2xl shrink-0 disabled:opacity-50" aria-label="Add task">
+          <button type="submit" disabled={submitting} className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-xl shrink-0 disabled:opacity-50 font-bold transition-colors" aria-label="Add task">
             +
           </button>
         </div>
@@ -286,8 +286,8 @@ export default function AddTask({ projectId, onTasksChanged }: { projectId: stri
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={`grid grid-cols-[30px_1fr_24px_24px_24px] sm:grid-cols-[40px_2fr_100px_30px_30px_30px] items-center gap-2 p-2 rounded bg-white text-black`}>
-                      <input type="checkbox" className="w-5 h-5 accent-gray-600" checked={false}
+                      className={`grid grid-cols-[30px_1fr_24px_24px_24px] sm:grid-cols-[40px_2fr_100px_30px_30px_30px] items-center gap-2 p-2 rounded-lg bg-card border border-border shadow-sm hover:shadow transition-shadow text-card-foreground`}>
+                      <input type="checkbox" className="w-5 h-5 accent-foreground cursor-pointer" checked={false}
                         aria-label="Mark task as completed"
                         onChange={() => tomarkTask(newTask)} />
                       <span className="break-all">{newTask.description}</span>
@@ -296,7 +296,7 @@ export default function AddTask({ projectId, onTasksChanged }: { projectId: stri
                       </span>
                       <div className='sm:flex sm:justify-items-end flex sm:flex-row gap-1'>
                         <button
-                          className='text-gray-500 rounded hover:bg-gray-200 justify-items-center'
+                          className='text-muted-foreground rounded-md hover:bg-accent hover:text-foreground justify-items-center transition-colors'
                           onClick={() => openModalEdit(newTask)}
                           title="Edit task"
                           aria-label="Edit task"
@@ -304,7 +304,7 @@ export default function AddTask({ projectId, onTasksChanged }: { projectId: stri
                           <EditIcon />
                         </button>
                         <button
-                          className='text-gray-500 rounded hover:bg-gray-200 justify-items-center'
+                          className='text-muted-foreground rounded-md hover:bg-accent hover:text-foreground justify-items-center transition-colors'
                           onClick={() => copyTask(newTask.description)}
                           title="Copy task"
                           aria-label="Copy task"
@@ -312,7 +312,7 @@ export default function AddTask({ projectId, onTasksChanged }: { projectId: stri
                           <CopyIcon />
                         </button>
                         <button
-                          className='text-gray-500 rounded hover:bg-gray-200 justify-items-center'
+                          className='text-muted-foreground rounded-md hover:bg-accent hover:text-foreground justify-items-center transition-colors'
                           onClick={() => confirmedDelete(newTask)}
                           title="Delete task"
                           aria-label="Delete task"
@@ -335,7 +335,7 @@ export default function AddTask({ projectId, onTasksChanged }: { projectId: stri
           <button
             type="button"
             onClick={() => setShowCompleted(!showCompleted)}
-            className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-white text-gray-500 font-bold hover:bg-gray-200"
+            className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-card border border-border shadow-sm text-foreground font-bold hover:bg-accent transition-colors"
           >
             <span>Completed ({list.filter((t) => t.status === 'completed').length})</span>
             <span>{showCompleted ? '−' : '+'}</span>
@@ -345,8 +345,8 @@ export default function AddTask({ projectId, onTasksChanged }: { projectId: stri
               {list.filter((t) => t.status === 'completed').map((newTask) => (
                 <li
                   key={newTask.id}
-                  className={`grid grid-cols-[30px_1fr_24px_24px_24px] sm:grid-cols-[40px_2fr_100px_30px_30px_30px] items-center gap-2 p-2 rounded bg-gray-200 text-gray-500 line-through`}>
-                  <input type="checkbox" className="w-5 h-5 accent-gray-600" checked={true}
+                  className={`grid grid-cols-[30px_1fr_24px_24px_24px] sm:grid-cols-[40px_2fr_100px_30px_30px_30px] items-center gap-2 p-2 rounded-lg bg-muted text-muted-foreground line-through`}>
+                  <input type="checkbox" className="w-5 h-5 accent-foreground cursor-pointer" checked={true}
                     aria-label="Mark task as pending"
                     onChange={() => tomarkTask(newTask)} />
                   <span className="break-all">{newTask.description}</span>
@@ -355,7 +355,7 @@ export default function AddTask({ projectId, onTasksChanged }: { projectId: stri
                   </span>
                   <div className='sm:flex sm:justify-items-end flex sm:flex-row gap-1'>
                     <button
-                      className='rounded hover:bg-gray-300 justify-items-center'
+                      className='rounded-md hover:bg-accent hover:text-foreground justify-items-center transition-colors'
                       onClick={() => openModalEdit(newTask)}
                       title="Edit task"
                       aria-label="Edit task"
@@ -363,7 +363,7 @@ export default function AddTask({ projectId, onTasksChanged }: { projectId: stri
                       <EditIcon />
                     </button>
                     <button
-                      className='rounded hover:bg-gray-300 justify-items-center'
+                      className='rounded-md hover:bg-accent hover:text-foreground justify-items-center transition-colors'
                       onClick={() => copyTask(newTask.description)}
                       title="Copy task"
                       aria-label="Copy task"
@@ -371,7 +371,7 @@ export default function AddTask({ projectId, onTasksChanged }: { projectId: stri
                       <CopyIcon />
                     </button>
                     <button
-                      className='rounded hover:bg-gray-300 justify-items-center'
+                      className='rounded-md hover:bg-accent hover:text-foreground justify-items-center transition-colors'
                       onClick={() => confirmedDelete(newTask)}
                       title="Delete task"
                       aria-label="Delete task"
@@ -386,20 +386,20 @@ export default function AddTask({ projectId, onTasksChanged }: { projectId: stri
         </div>
       )}
       {showModalDelete && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-50 bg-opacity-40 z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-lg text-gray-500 font-bold mb-4">Confirm deletion</h2>
-            <p className='text-gray-500'>Are you sure you want to delete the task?</p>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <h2 className="text-lg text-foreground font-bold mb-4">Confirm deletion</h2>
+            <p className='text-muted-foreground'>Are you sure you want to delete the task?</p>
 
             <div className="mt-6 flex justify-end gap-4">
               <button
-                className="px-4 py-2 rounded font-bold text-gray-500 bg-gray-300 hover:bg-gray-400"
+                className="px-4 py-2 rounded-lg font-medium text-foreground bg-accent hover:bg-accent/80 transition-colors"
                 onClick={() => setShowModalDelete(false)}
               >
                 Cancel
               </button>
               <button
-                className="px-4 py-2 rounded font-bold bg-gray-800 text-white hover:bg-gray-950"
+                className="px-4 py-2 rounded-lg font-semibold bg-destructive text-white hover:bg-destructive/90 transition-colors"
                 onClick={deleteConfirmedTask}
               >
                 Delete
@@ -409,32 +409,32 @@ export default function AddTask({ projectId, onTasksChanged }: { projectId: stri
         </div>
       )}
       {showModalEdit && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-lg text-gray-500 font-bold mb-4">Edit Task</h2>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <h2 className="text-lg text-foreground font-bold mb-4">Edit Task</h2>
 
             <input
               type="text"
               value={descriptionEdit}
               onChange={(e) => setDescriptionEdit(e.target.value)}
               placeholder="Description"
-              className="w-full text-gray-500 p-2 rounded mb-2 border border-gray-300"
+              className="w-full text-foreground p-2 rounded-lg mb-2 border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring"
             />
             <input
               type="date"
               value={dateEdit}
               onChange={(e) => setDateEdit(e.target.value)}
-              className="w-full text-gray-500 p-2 rounded mb-2 border border-gray-300"
+              className="w-full text-foreground p-2 rounded-lg mb-2 border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring"
             />
             <div className="flex justify-end gap-4">
               <button
-                className="px-4 py-2 rounded font-bold text-gray-500 bg-gray-300 hover:bg-gray-400"
+                className="px-4 py-2 rounded-lg font-medium text-foreground bg-accent hover:bg-accent/80 transition-colors"
                 onClick={() => setShowModalEdit(false)}
               >
                 Cancel
               </button>
               <button
-                className="px-4 py-2 rounded font-bold bg-gray-800 text-white hover:bg-gray-950"
+                className="px-4 py-2 rounded-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 onClick={async () => {
                   if (taskEdit) {
                     const saved = await saveEdit(taskEdit, descriptionEdit, dateEdit);

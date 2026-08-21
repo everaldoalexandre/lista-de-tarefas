@@ -6,6 +6,7 @@ import Logout from './Logout';
 import CurrentDate from './CurrentData';
 import Projects from './Projects';
 import AddTask from './AddTask';
+import { ThemeToggle } from './ThemeToggle';
 import { MenuIcon, ChevronLeftIcon, ChevronRightIcon, DeleteIcon, EditIcon, SettingsIcon } from './Lucide';
 import type { Project } from '@/type/type';
 import { toast } from "sonner";
@@ -106,25 +107,28 @@ export default function HomeContent() {
   }
 
   return (
-    <div className="font-sans bg-gray-100 min-h-screen flex flex-col md:flex-row">
-      <header className="md:hidden flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
+    <div className="font-sans bg-background min-h-screen flex flex-col md:flex-row">
+      <header className="md:hidden flex items-center justify-between px-4 py-3 bg-card border-b border-border">
         <button
           type="button"
-          className="text-gray-500"
+          className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-accent transition-colors"
           onClick={() => setMobileSidebarOpen(true)}
           aria-label="Open menu"
         >
           <MenuIcon />
         </button>
         <CurrentDate />
-        <Logout />
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <Logout />
+        </div>
       </header>
 
-      <aside className={`hidden md:flex flex-col bg-gray-50 border-r border-gray-200 transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-72'}`}>
+      <aside className={`hidden md:flex flex-col bg-card border-r border-border transition-all duration-300 ${sidebarCollapsed ? 'w-16' : 'w-72'}`}>
         <div className={`flex items-center justify-end p-2 ${sidebarCollapsed ? 'justify-center' : ''}`}>
           <button
             type="button"
-            className="text-gray-400 hover:text-gray-600 p-1"
+            className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-accent transition-colors"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
@@ -143,14 +147,14 @@ export default function HomeContent() {
       {mobileSidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div
-            className="absolute inset-0 bg-black/30"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setMobileSidebarOpen(false)}
           />
-          <div className="absolute inset-y-0 left-0 w-72 bg-gray-50 shadow-lg">
+          <div className="absolute inset-y-0 left-0 w-72 bg-card shadow-lg">
             <div className="flex items-center justify-end p-2">
               <button
                 type="button"
-                className="text-gray-400 hover:text-gray-600 p-1"
+                className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-accent transition-colors"
                 onClick={() => setMobileSidebarOpen(false)}
                 aria-label="Close menu"
               >
@@ -170,10 +174,11 @@ export default function HomeContent() {
       <main className="flex-1 flex flex-col items-center p-4 md:p-8 pb-20">
         <nav className="hidden md:flex w-full items-center justify-between">
           <CurrentDate />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
             <Link
               href="/settings"
-              className="text-gray-400 hover:text-gray-600 p-2 rounded hover:bg-gray-200"
+              className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-accent transition-colors"
               title="Settings"
               aria-label="Settings"
             >
@@ -185,10 +190,10 @@ export default function HomeContent() {
         {selectedProject ? (
           <div className="w-full flex flex-col items-center pt-6 md:pt-10">
             <div className="flex items-center gap-2 mb-4">
-              <h2 className="text-xl md:text-2xl font-bold text-gray-500 text-center">{selectedProject.name}</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">{selectedProject.name}</h2>
               <button
                 type="button"
-                className="text-gray-400 hover:text-gray-600"
+                className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-accent transition-colors"
                 onClick={openModalEdit}
                 title="Edit project name"
                 aria-label="Edit project name"
@@ -197,7 +202,7 @@ export default function HomeContent() {
               </button>
               <button
                 type="button"
-                className="text-gray-400 hover:text-gray-600"
+                className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-accent transition-colors"
                 onClick={() => setShowModalDelete(true)}
                 title="Delete project"
                 aria-label="Delete project"
@@ -208,32 +213,32 @@ export default function HomeContent() {
             <AddTask projectId={selectedProject.id} onTasksChanged={loadProjects} />
           </div>
         ) : (
-          <p className="text-gray-400 font-bold pt-10">Select a project to see and manage its tasks.</p>
+          <p className="text-muted-foreground font-bold pt-10">Select a project to see and manage its tasks.</p>
         )}
       </main>
 
       {showModalEdit && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-lg text-gray-500 font-bold mb-4">Edit project</h2>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <h2 className="text-lg text-foreground font-bold mb-4">Edit project</h2>
 
             <input
               type="text"
               value={nameEdit}
               onChange={(e) => setNameEdit(e.target.value)}
               placeholder="Project name"
-              className="w-full text-gray-500 p-2 rounded mb-4 border border-gray-300"
+              className="w-full text-foreground p-2 rounded-lg mb-4 border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring"
             />
 
-            <div className="flex justify-end gap-4">
+            <div className="flex justify-end gap-3">
               <button
-                className="px-4 py-2 rounded font-bold text-gray-500 bg-gray-300 hover:bg-gray-400"
+                className="px-4 py-2 rounded-lg font-medium text-foreground bg-accent hover:bg-accent/80 transition-colors"
                 onClick={() => setShowModalEdit(false)}
               >
                 Cancel
               </button>
               <button
-                className="px-4 py-2 rounded font-bold bg-gray-800 text-white hover:bg-gray-950"
+                className="px-4 py-2 rounded-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 onClick={saveEdit}
               >
                 Save
@@ -244,20 +249,20 @@ export default function HomeContent() {
       )}
 
       {showModalDelete && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-50 bg-opacity-40 z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-lg">
-            <h2 className="text-lg text-gray-500 font-bold mb-4">Confirm deletion</h2>
-            <p className="text-gray-500">Are you sure you want to delete the project {selectedProject?.name}? Its tasks will also be deleted.</p>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <h2 className="text-lg text-foreground font-bold mb-4">Confirm deletion</h2>
+            <p className="text-muted-foreground">Are you sure you want to delete the project {selectedProject?.name}? Its tasks will also be deleted.</p>
 
-            <div className="mt-6 flex justify-end gap-4">
+            <div className="mt-6 flex justify-end gap-3">
               <button
-                className="px-4 py-2 rounded font-bold text-gray-500 bg-gray-300 hover:bg-gray-400"
+                className="px-4 py-2 rounded-lg font-medium text-foreground bg-accent hover:bg-accent/80 transition-colors"
                 onClick={() => setShowModalDelete(false)}
               >
                 Cancel
               </button>
               <button
-                className="px-4 py-2 rounded font-bold bg-gray-800 text-white hover:bg-gray-950"
+                className="px-4 py-2 rounded-lg font-semibold bg-destructive text-white hover:bg-destructive/90 transition-colors"
                 onClick={deleteProject}
               >
                 Delete

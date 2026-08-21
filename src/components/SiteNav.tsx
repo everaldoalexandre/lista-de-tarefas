@@ -9,10 +9,10 @@ export default function SiteNav() {
   const { data: session, isPending } = useSession();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-gray-200 bg-white/80 backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
       <nav className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 font-bold text-gray-800">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-gray-900 text-white">
+        <Link href="/" className="flex items-center gap-2 font-bold text-foreground">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <ListTodo className="size-5" />
           </span>
           Lista de Tarefas
