@@ -2,8 +2,7 @@ import { LoginForm } from "@/components/Login"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import Link from "next/link";
+import Link from "next/link"
 
 
 export default async function LoginPage() {
@@ -12,7 +11,7 @@ export default async function LoginPage() {
   })
 
   if (userSession) {
-    redirect('/')
+    redirect('/app')
   }
 
   return (
@@ -20,13 +19,12 @@ export default async function LoginPage() {
       <div className="w-full max-w-sm">
         <LoginForm />
       </div>
-      <div>
-        <Link href="/register">
-          <Button type="button">
-            Register
-          </Button>
+      <p className="text-sm text-gray-500">
+        Don&apos;t have an account?{' '}
+        <Link href="/register" className="font-bold text-gray-800 underline-offset-4 hover:underline">
+          Register
         </Link>
-      </div>
+      </p>
     </div>
   )
 }

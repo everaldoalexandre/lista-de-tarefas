@@ -1,4 +1,4 @@
-import { X, SquarePen, Plus, Menu, ChevronLeft, ChevronRight, Calendar, Copy } from 'lucide-react';
+import { X, SquarePen, Plus, Menu, ChevronLeft, ChevronRight, Calendar, Copy, Settings } from 'lucide-react';
 
 export const DeleteIcon = () => <X />;
 
@@ -15,3 +15,5 @@ export const ChevronRightIcon = () => <ChevronRight />;
 export const CalendarIcon = () => <Calendar />;
 
 export const CopyIcon = () => <Copy />;
+
+export const SettingsIcon = () => <Settings />;

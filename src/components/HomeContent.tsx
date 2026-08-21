@@ -1,22 +1,43 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import Logout from './Logout';
 import CurrentDate from './CurrentData';
 import Projects from './Projects';
 import AddTask from './AddTask';
-import { MenuIcon, ChevronLeftIcon, ChevronRightIcon, DeleteIcon, EditIcon } from './Lucide';
+import { MenuIcon, ChevronLeftIcon, ChevronRightIcon, DeleteIcon, EditIcon, SettingsIcon } from './Lucide';
+import type { Project } from '@/type/type';
 import { toast } from "sonner";
 
-type Project = { id: string; name: string; userId: string; createdAt: string; pendingCount?: number };
-
 export default function HomeContent() {
+  const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showModalEdit, setShowModalEdit] = useState(false);
   const [nameEdit, setNameEdit] = useState('');
   const [showModalDelete, setShowModalDelete] = useState(false);
+
+  const loadProjects = useCallback(async () => {
+    try {
+      const response = await fetch('/api/projects');
+
+      if (response.ok) {
+        const data: { projects: Project[] } = await response.json();
+        setProjects(data.projects);
+      } else {
+        console.error('Error loading projects', response.statusText);
+      }
+    } catch (error) {
+      console.error('Request error:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de dados no mount
+    loadProjects();
+  }, [loadProjects]);
 
   function handleSelectProject(project: Project | null) {
     setSelectedProject(project);
@@ -50,7 +71,7 @@ export default function HomeContent() {
         toast.success("Project updated!")
         setSelectedProject(result.project);
         setShowModalEdit(false);
-        window.dispatchEvent(new Event('projects-changed'));
+        await loadProjects();
       } else {
         toast.error(result.error || 'Error updating project.');
       }
@@ -63,19 +84,24 @@ export default function HomeContent() {
   async function deleteProject() {
     if (!selectedProject) return;
 
-    const response = await fetch('/api/projects', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: selectedProject.id }),
-    });
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: selectedProject.id }),
+      });
 
-    if (response.ok) {
-      toast.success("Project deleted!")
-      setShowModalDelete(false);
-      setSelectedProject(null);
-      window.dispatchEvent(new Event('projects-changed'));
-    } else {
-      toast.error('Error deleting project');
+      if (response.ok) {
+        toast.success("Project deleted!")
+        setShowModalDelete(false);
+        setSelectedProject(null);
+        await loadProjects();
+      } else {
+        toast.error('Error deleting project');
+      }
+    } catch (error) {
+      console.error('Request error:', error);
+      toast.error('Connection error. Please try again.');
     }
   }
 
@@ -86,6 +112,7 @@ export default function HomeContent() {
           type="button"
           className="text-gray-500"
           onClick={() => setMobileSidebarOpen(true)}
+          aria-label="Open menu"
         >
           <MenuIcon />
         </button>
@@ -99,11 +126,14 @@ export default function HomeContent() {
             type="button"
             className="text-gray-400 hover:text-gray-600 p-1"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {sidebarCollapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
           </button>
         </div>
         <Projects
+          projects={projects}
+          reloadProjects={loadProjects}
           selectedProjectId={selectedProject?.id ?? null}
           onSelectProject={handleSelectProject}
           collapsed={sidebarCollapsed}
@@ -122,11 +152,14 @@ export default function HomeContent() {
                 type="button"
                 className="text-gray-400 hover:text-gray-600 p-1"
                 onClick={() => setMobileSidebarOpen(false)}
+                aria-label="Close menu"
               >
                 <DeleteIcon />
               </button>
             </div>
             <Projects
+              projects={projects}
+              reloadProjects={loadProjects}
               selectedProjectId={selectedProject?.id ?? null}
               onSelectProject={handleSelectProject}
             />
@@ -137,7 +170,17 @@ export default function HomeContent() {
       <main className="flex-1 flex flex-col items-center p-4 md:p-8 pb-20">
         <nav className="hidden md:flex w-full items-center justify-between">
           <CurrentDate />
-          <Logout />
+          <div className="flex items-center gap-2">
+            <Link
+              href="/settings"
+              className="text-gray-400 hover:text-gray-600 p-2 rounded hover:bg-gray-200"
+              title="Settings"
+              aria-label="Settings"
+            >
+              <SettingsIcon />
+            </Link>
+            <Logout />
+          </div>
         </nav>
         {selectedProject ? (
           <div className="w-full flex flex-col items-center pt-6 md:pt-10">
@@ -148,6 +191,7 @@ export default function HomeContent() {
                 className="text-gray-400 hover:text-gray-600"
                 onClick={openModalEdit}
                 title="Edit project name"
+                aria-label="Edit project name"
               >
                 <EditIcon />
               </button>
@@ -156,11 +200,12 @@ export default function HomeContent() {
                 className="text-gray-400 hover:text-gray-600"
                 onClick={() => setShowModalDelete(true)}
                 title="Delete project"
+                aria-label="Delete project"
               >
                 <DeleteIcon />
               </button>
             </div>
-            <AddTask projectId={selectedProject.id} />
+            <AddTask projectId={selectedProject.id} onTasksChanged={loadProjects} />
           </div>
         ) : (
           <p className="text-gray-400 font-bold pt-10">Select a project to see and manage its tasks.</p>

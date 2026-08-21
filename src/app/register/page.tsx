@@ -2,7 +2,6 @@ import { RegisterForm } from "@/components/Register"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
-import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
 export default async function RegisterPage() {
@@ -11,7 +10,7 @@ export default async function RegisterPage() {
   })
 
   if (userSession) {
-    redirect('/')
+    redirect('/app')
   }
 
   return (
@@ -19,13 +18,12 @@ export default async function RegisterPage() {
       <div className="w-full max-w-sm">
         <RegisterForm />
       </div>
-      <div>
-        <Link href="/login">
-          <Button type="button">
-            Go to Login page
-          </Button>
+      <p className="text-sm text-gray-500">
+        Already have an account?{' '}
+        <Link href="/login" className="font-bold text-gray-800 underline-offset-4 hover:underline">
+          Sign in
         </Link>
-      </div>
+      </p>
     </div>
   )
 }
