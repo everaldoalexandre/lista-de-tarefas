@@ -347,8 +347,12 @@ export default function HomeContent() {
                   </div>
                 </div>
                 <ProgressBar projectId={selectedProject.id} key={selectedProject.id} />
-                <TimerCard projectId={selectedProject.id} key={'t' + selectedProject.id} />
-                <WeeklySummary />
+                {selectedProject.type === 'study' && (
+                  <>
+                    <TimerCard projectId={selectedProject.id} key={'t' + selectedProject.id} />
+                    <WeeklySummary />
+                  </>
+                )}
               </>
             ) : (
               <h2 className="text-xl md:text-2xl font-bold text-foreground">{smartLabels[smartList!]}</h2>
