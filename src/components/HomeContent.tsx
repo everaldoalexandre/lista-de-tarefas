@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Trash2 } from 'lucide-react';
+import { Trash2, BarChart3 } from 'lucide-react';
 import Logout from './Logout';
 import CurrentDate from './CurrentData';
 import Projects from './Projects';
@@ -277,6 +277,14 @@ export default function HomeContent() {
               aria-label="Habits"
             >
               <FlameIcon />
+            </Link>
+            <Link
+              href="/review"
+              className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-accent transition-colors"
+              title="Weekly review"
+              aria-label="Weekly review"
+            >
+              <BarChart3 className="size-5" />
             </Link>
             <Link
               href="/trash"

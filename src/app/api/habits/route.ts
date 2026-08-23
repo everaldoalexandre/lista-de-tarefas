@@ -10,10 +10,17 @@ function dayKey(date: Date) {
 
 function computeStreak(dates: Set<string>) {
   let streak = 0;
+  let misses = 0;
   const cursor = new Date();
   if (!dates.has(dayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
-  while (dates.has(dayKey(cursor))) {
-    streak++;
+  for (let i = 0; i < 400; i++) {
+    if (dates.has(dayKey(cursor))) {
+      streak++;
+      misses = 0;
+    } else {
+      misses++;
+      if (misses >= 2) break;
+    }
     cursor.setDate(cursor.getDate() - 1);
   }
   return streak;

@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import type { Task } from '@/type/type';
 import { toast } from "sonner"
 import { STATUS_COLUMNS, dueBadgeClass, formatDueDate, normalizeStatus, priorityStyles } from '@/lib/task-utils';
+import { parseTaskInput } from '@/lib/nlp-parse';
 
 function toDateInputValue(date: Date) {
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -285,19 +286,36 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
     setSubmitting(true);
 
     try {
+      const parsed = parseTaskInput(description);
+      const finalDescription = parsed.description || description.trim();
+      const parsedTags = Array.from(new Set([
+        ...(tagsInput.trim() ? tagsInput.split(',').map((t) => t.trim()).filter(Boolean) : []),
+        ...parsed.tags,
+      ])).slice(0, 10);
+
+      if (parsed.date || parsed.priority || parsed.tags.length > 0) {
+        toast.info('Detected from text: ' + [
+          parsed.date && `date ${parsed.date}`,
+          parsed.priority && `priority ${parsed.priority}`,
+          parsed.tags.length > 0 && `tags #${parsed.tags.join(' #')}`,
+        ].filter(Boolean).join(', '));
+      }
+
       const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           newTask: {
-            description: description.trim(),
-            date: date ? new Date(`${date}T00:00:00`).toISOString() : undefined,
+            description: finalDescription,
+            date: date
+              ? new Date(`${date}T00:00:00`).toISOString()
+              : parsed.date
+                ? new Date(`${parsed.date}T00:00:00`).toISOString()
+                : undefined,
             projectId,
             recurrence: recurrence !== 'none' ? recurrence : undefined,
-            priority: priority !== 'none' ? priority : undefined,
-            tags: tagsInput.trim()
-              ? tagsInput.split(',').map((t) => t.trim()).filter(Boolean).slice(0, 10)
-              : undefined,
+            priority: priority !== 'none' ? priority : parsed.priority,
+            tags: parsedTags.length > 0 ? parsedTags : undefined,
           }
         })
       });
