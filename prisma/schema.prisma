@@ -9,12 +9,13 @@ datasource db {
 }
 
 model Project {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String    @id @default(uuid()) @db.Uuid
   name      String
-  pinned    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String   @db.Uuid
+  pinned    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String    @db.Uuid
   list      List[]
 }
 
@@ -28,10 +29,21 @@ model List {
   tags        String[]
   pinned      Boolean   @default(false)
   order       Int?
+  deletedAt   DateTime?
   user        User      @relation(fields: [userId], references: [id])
   userId      String    @db.Uuid
   project     Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId   String?   @db.Uuid
+}
+
+model TimeEntry {
+  id        String   @id @default(uuid()) @db.Uuid
+  minutes   Int
+  date      DateTime @db.Date
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String   @db.Uuid
+  projectId String?  @db.Uuid
 }
 
 model User {
@@ -46,6 +58,7 @@ model User {
   list          List[]
   projects      Project[]
   habits        Habit[]
+  timeEntries   TimeEntry[]
 
   @@unique([email])
   @@map("user")

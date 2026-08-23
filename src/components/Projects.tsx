@@ -9,7 +9,25 @@ import type { Project } from '@/type/type';
 
 export default function Projects({ projects, reloadProjects, loading, smartList, onSelectSmart, selectedProjectId, onSelectProject, collapsed }: { projects: Project[]; reloadProjects: () => Promise<void>; loading?: boolean; smartList: 'today' | 'week' | null; onSelectSmart: (key: 'today' | 'week') => void; selectedProjectId: string | null; onSelectProject: (project: Project | null) => void; collapsed?: boolean }) {
   const [name, setName] = useState('');
+  const [template, setTemplate] = useState('blank');
   const [showModalAdd, setShowModalAdd] = useState(false);
+
+  const TEMPLATES: Record<string, { label: string; tasks: string[] }> = {
+    blank: { label: 'Blank', tasks: [] },
+    study: { label: 'Study plan', tasks: ['Define the subject and goals', 'Gather study materials', 'Set a weekly schedule', 'Create review checkpoints'] },
+    sprint: { label: 'Work sprint', tasks: ['Plan and estimate tasks', 'Daily progress check-in', 'Mid-sprint review', 'Retro and wrap-up'] },
+    personal: { label: 'Personal goals', tasks: ['List top 3 priorities', 'Break goals into weekly actions', 'Schedule focus time', 'Monthly review'] },
+  };
+
+  async function createStarterTasks(projectId: string, descriptions: string[]) {
+    for (const description of descriptions) {
+      await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newTask: { description, projectId } }),
+      });
+    }
+  }
 
   async function createProject() {
     if (!name.trim()) {
@@ -29,7 +47,13 @@ export default function Projects({ projects, reloadProjects, loading, smartList,
       if (response.ok) {
         toast.success("Project created!")
         setName('');
+        setTemplate('blank');
         setShowModalAdd(false);
+        const presetTasks = TEMPLATES[template]?.tasks ?? [];
+        if (presetTasks.length > 0) {
+          await createStarterTasks(result.project.id, presetTasks);
+          toast.success('Template tasks added!');
+        }
         await reloadProjects();
         onSelectProject(result.project);
       } else {
@@ -157,8 +181,19 @@ export default function Projects({ projects, reloadProjects, loading, smartList,
             onChange={(e) => setName(e.target.value)}
             placeholder="Project name"
             onKeyDown={(e) => e.key === 'Enter' && createProject()}
-            className="w-full text-foreground p-2 rounded-lg mb-4 border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring"
+            className="w-full text-foreground p-2 rounded-lg mb-3 border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring"
           />
+
+          {!collapsed && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {Object.entries(TEMPLATES).map(([key, tpl]) => (
+                <button key={key} type="button" onClick={() => setTemplate(key)}
+                  className={`rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${template === key ? 'bg-primary text-primary-foreground' : 'border border-border text-muted-foreground hover:bg-accent'}`}>
+                  {tpl.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="flex justify-end gap-3">
             <button

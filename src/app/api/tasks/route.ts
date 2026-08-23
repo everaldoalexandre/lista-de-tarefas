@@ -59,9 +59,11 @@ export async function GET(request: Request) {
     const projectId = searchParams.get("projectId");
     const range = searchParams.get("range");
     const all = searchParams.get("all") === "1";
+    const trash = searchParams.get("trash") === "1";
 
     const where = {
       userId: session.user.id,
+      deletedAt: trash ? { not: null } : null,
       ...(all ? {} : { projectId: projectId || null }),
       ...(range === "today"
         ? { status: "pending", date: { lte: endOfToday() } }
@@ -196,21 +198,33 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
-    const { id } = await request.json();
+    const body = await request.json();
+    const { id } = body;
 
     if (!id) {
       return NextResponse.json({ error: "ID is mandatory" }, { status: 400 });
     }
 
-    const deleted = await prisma.list.deleteMany({
-      where: { id: String(id), userId: session.user.id },
+    if (body.purge === true) {
+      const purged = await prisma.list.deleteMany({
+        where: { id: String(id), userId: session.user.id, deletedAt: { not: null } },
+      });
+      if (purged.count === 0) {
+        return NextResponse.json({ error: "Task not found" }, { status: 404 });
+      }
+      return NextResponse.json({ message: "Task permanently deleted" });
+    }
+
+    const deleted = await prisma.list.updateMany({
+      where: { id: String(id), userId: session.user.id, deletedAt: null },
+      data: { deletedAt: new Date() },
     });
 
     if (deleted.count === 0) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ message: "Task deleted successfully" });
+    return NextResponse.json({ message: "Task moved to trash" });
   } catch (error) {
     console.error("Error deleting task:", error);
     return NextResponse.json(
@@ -233,6 +247,30 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
+
+    const { id } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "ID is mandatory" }, { status: 400 });
+    }
+
+    if (body.restore === true) {
+      const restored = await prisma.list.updateMany({
+        where: { id: String(id), userId: session.user.id, deletedAt: { not: null } },
+        data: { deletedAt: null },
+      });
+      if (restored.count === 0) {
+        return NextResponse.json({ error: "Task not found" }, { status: 404 });
+      }
+      return NextResponse.json({ message: "Task restored" });
+    }
+
+    if (body.purge === true) {
+      await prisma.list.deleteMany({
+        where: { id: String(id), userId: session.user.id, deletedAt: { not: null } },
+      });
+      return NextResponse.json({ message: "Task permanently deleted" });
+    }
 
     const reorderParsed = reorderSchema.safeParse(body);
     if (reorderParsed.success) {
@@ -257,7 +295,7 @@ export async function PUT(request: Request) {
     const updateParsed = taskUpdateSchema.safeParse(body);
     if (!updateParsed.success) return invalid(updateParsed.error.flatten());
 
-    const { id, status, description, date, projectId, recurrence, priority, pinned, tags } = updateParsed.data;
+    const { status, description, date, projectId, recurrence, priority, pinned, tags } = updateParsed.data;
 
     const updateData: UpdateData = {};
 
@@ -288,7 +326,7 @@ export async function PUT(request: Request) {
     if (tags !== undefined) updateData.tags = tags;
 
     const existing = await prisma.list.findFirst({
-      where: { id: String(id), userId: session.user.id },
+      where: { id: String(id), userId: session.user.id, deletedAt: null },
     });
 
     if (!existing) {

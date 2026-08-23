@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { Trash2 } from 'lucide-react';
 import Logout from './Logout';
 import CurrentDate from './CurrentData';
 import Projects from './Projects';
 import AddTask from './AddTask';
+import TimerCard from './TimerCard';
 import SearchPalette from './SearchPalette';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ThemeToggle } from './ThemeToggle';
@@ -251,6 +253,14 @@ export default function HomeContent() {
               <FlameIcon />
             </Link>
             <Link
+              href="/trash"
+              className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-accent transition-colors"
+              title="Trash"
+              aria-label="Trash"
+            >
+              <Trash2 className="size-5" />
+            </Link>
+            <Link
               href="/settings"
               className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-accent transition-colors"
               title="Settings"
@@ -300,6 +310,8 @@ export default function HomeContent() {
                   </div>
                 </div>
                 <ProgressBar projectId={selectedProject.id} key={selectedProject.id} />
+                <TimerCard projectId={selectedProject.id} key={'t' + selectedProject.id} />
+                <WeeklySummary />
               </>
             ) : (
               <h2 className="text-xl md:text-2xl font-bold text-foreground">{smartLabels[smartList!]}</h2>
@@ -377,6 +389,35 @@ export default function HomeContent() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function WeeklySummary() {
+  const [weekTotal, setWeekTotal] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const r = await fetch('/api/timer');
+        if (r.ok) setWeekTotal((await r.json()).weekTotal ?? 0);
+      } catch {
+        setWeekTotal(null);
+      }
+    }
+    load();
+    window.addEventListener('time-logged', load);
+    return () => window.removeEventListener('time-logged', load);
+  }, []);
+
+  if (weekTotal === null || weekTotal === 0) return null;
+
+  const h = Math.floor(weekTotal / 60);
+  const m = weekTotal % 60;
+
+  return (
+    <p className="text-xs font-semibold text-muted-foreground">
+      Focused this week: {h > 0 ? `${h}h ` : ''}{m}min
+    </p>
   );
 }
 

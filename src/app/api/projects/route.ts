@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server';
 
 //GET
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await auth.api.getSession({
       headers: await headers()
@@ -20,9 +20,13 @@ export async function GET() {
       );
     }
 
+    const { searchParams } = new URL(request.url);
+    const trash = searchParams.get("trash") === "1";
+
     const projects = await prisma.project.findMany({
       where: {
-        userId: session.user.id
+        userId: session.user.id,
+        deletedAt: trash ? { not: null } : null,
       },
       orderBy: { createdAt: 'asc' },
       include: {
@@ -126,10 +130,6 @@ export async function PUT(request: Request) {
 
     const { id, name, pinned } = parsed.data;
 
-    if (!name && pinned === undefined) {
-      return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
-    }
-
     const project = await prisma.project.findFirst({
       where: {
         id: String(id),
@@ -139,6 +139,18 @@ export async function PUT(request: Request) {
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    }
+
+    if ((parsed.data as { restore?: boolean }).restore === true) {
+      await prisma.project.update({
+        where: { id: project.id },
+        data: { deletedAt: null }
+      });
+      return NextResponse.json({ message: 'Project restored' });
+    }
+
+    if (!name && pinned === undefined) {
+      return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
     }
 
     const updated = await prisma.project.update({
@@ -169,7 +181,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const { id } = await request.json();
+    const { id, purge } = await request.json();
 
     const session = await auth.api.getSession({
       headers: await headers()
@@ -186,10 +198,23 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'ID is mandatory' }, { status: 400 });
     }
 
+    if (purge === true) {
+      await prisma.project.deleteMany({
+        where: {
+          id: String(id),
+          userId: session.user.id,
+          deletedAt: { not: null }
+        }
+      });
+
+      return NextResponse.json({ message: 'Project permanently deleted' });
+    }
+
     const project = await prisma.project.findFirst({
       where: {
         id: String(id),
-        userId: session.user.id
+        userId: session.user.id,
+        deletedAt: null
       }
     });
 
@@ -197,11 +222,12 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
-    await prisma.project.delete({
-      where: { id: project.id }
+    await prisma.project.update({
+      where: { id: project.id },
+      data: { deletedAt: new Date() }
     });
 
-    return NextResponse.json({ message: 'Project deleted successfully' });
+    return NextResponse.json({ message: 'Project moved to trash' });
 
   } catch (error) {
     console.error('Error deleting project:', error);

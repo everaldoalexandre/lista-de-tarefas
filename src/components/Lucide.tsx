@@ -1,4 +1,4 @@
-import { X, SquarePen, Plus, Menu, ChevronLeft, ChevronRight, Calendar, Copy, Settings, Search, CalendarDays, CalendarRange, Flame } from 'lucide-react';
+import { X, SquarePen, Plus, Menu, ChevronLeft, ChevronRight, Calendar, Copy, Settings, Search, CalendarDays, CalendarRange, Flame, Pause, Play, RotateCcw, Timer, Clock } from 'lucide-react';
 
 export const DeleteIcon = () => <X />;
 
@@ -25,3 +25,7 @@ export const CalendarDaysIcon = () => <CalendarDays />;
 export const CalendarRangeIcon = () => <CalendarRange />;
 
 export const FlameIcon = () => <Flame />;
+
+export { Pause, Play, RotateCcw };
+export const TimerIcon2 = () => <Timer />;
+export const ClockIcon = () => <Clock />;

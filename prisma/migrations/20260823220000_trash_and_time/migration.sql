@@ -1,0 +1,12 @@
+ALTER TABLE "List" ADD COLUMN "deletedAt" TIMESTAMP(3);
+ALTER TABLE "Project" ADD COLUMN "deletedAt" TIMESTAMP(3);
+CREATE TABLE "TimeEntry" (
+    "id" UUID NOT NULL,
+    "minutes" INTEGER NOT NULL,
+    "date" DATE NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "userId" UUID NOT NULL,
+    "projectId" UUID,
+    CONSTRAINT "TimeEntry_pkey" PRIMARY KEY ("id")
+);
+ALTER TABLE "TimeEntry" ADD CONSTRAINT "TimeEntry_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
