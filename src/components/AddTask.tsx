@@ -32,6 +32,14 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
   const [taskEdit, setTaskEdit] = useState<Task | null>(null);
   const [descriptionEdit, setDescriptionEdit] = useState('');
   const [dateEdit, setDateEdit] = useState('');
+  const editDescriptionRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = editDescriptionRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.max(Math.min(el.scrollHeight, 192), 64)}px`;
+  }, [descriptionEdit, taskEdit]);
 
   function autoResize() {
     const el = descriptionRef.current;
@@ -506,8 +514,14 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
             <DialogHeader>
               <DialogTitle>Edit Task</DialogTitle>
             </DialogHeader>
-            <input type="text" value={descriptionEdit} onChange={(e) => setDescriptionEdit(e.target.value)} placeholder="Description"
-              className="w-full text-foreground p-2 rounded-lg border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring" />
+            <textarea
+              ref={editDescriptionRef}
+              value={descriptionEdit}
+              onChange={(e) => setDescriptionEdit(e.target.value)}
+              placeholder="Description"
+              rows={1}
+              className="w-full min-h-[64px] max-h-48 text-foreground p-2 rounded-lg border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring resize-none overflow-hidden"
+            />
             <input type="date" value={dateEdit} onChange={(e) => setDateEdit(e.target.value)}
               className="w-full text-foreground p-2 rounded-lg border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring" />
             <DialogFooter>
