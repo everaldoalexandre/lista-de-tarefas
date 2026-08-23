@@ -14,6 +14,7 @@ import { ThemeToggle } from './ThemeToggle';
 import { MenuIcon, ChevronLeftIcon, ChevronRightIcon, DeleteIcon, EditIcon, SettingsIcon, SearchIcon, FlameIcon } from './Lucide';
 import type { Project } from '@/type/type';
 import { toast } from "sonner";
+import { PROJECT_TYPES } from '@/lib/project-types';
 
 export type Selection =
   | { kind: 'project'; project: Project }
@@ -84,6 +85,31 @@ export default function HomeContent() {
     if (!selectedProject) return;
     setNameEdit(selectedProject.name);
     setShowModalEdit(true);
+  }
+
+  async function changeProjectType(id: string, type: string) {
+    const previous = selectedProject;
+    if (previous) setSelectedProject({ ...previous, type });
+
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, type }),
+      });
+
+      if (!response.ok) throw new Error('failed');
+
+      const result = await response.json();
+      setSelectedProject(result.project);
+      await loadProjects();
+      toast.success('Project moved!');
+    } catch (error) {
+      console.error('Request error:', error);
+      toast.error('Could not move the project.');
+      setSelectedProject(previous);
+      loadProjects();
+    }
   }
 
   async function saveEdit() {
@@ -280,6 +306,17 @@ export default function HomeContent() {
                 <div className="w-full flex items-center justify-between gap-2">
                   <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">{selectedProject.name}</h2>
                   <div className="flex items-center gap-1">
+                    <select
+                      value={selectedProject.type ?? 'general'}
+                      onChange={(e) => changeProjectType(selectedProject.id, e.target.value)}
+                      aria-label="Project group"
+                      title="Move to another group"
+                      className="rounded-lg border border-border bg-background text-xs font-semibold text-muted-foreground px-2 py-1.5 mr-1 outline-none focus:ring-2 focus:ring-ring cursor-pointer"
+                    >
+                      {PROJECT_TYPES.map((type) => (
+                        <option key={type.key} value={type.key}>{type.label}</option>
+                      ))}
+                    </select>
                     <div className="flex rounded-lg border border-border overflow-hidden mr-1">
                       {(['list', 'board'] as const).map((mode) => (
                         <button key={mode} type="button"
