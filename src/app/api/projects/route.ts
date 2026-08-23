@@ -75,11 +75,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Name is mandatory' }, { status: 400 });
     }
 
-    const { name } = parsed.data;
+    const { name, type } = parsed.data;
 
     const project = await prisma.project.create({
       data: {
         name,
+        type: type ?? 'general',
         userId: session.user.id
       }
     });
@@ -128,7 +129,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'ID is mandatory' }, { status: 400 });
     }
 
-    const { id, name, pinned } = parsed.data;
+    const { id, name, pinned, type } = parsed.data;
 
     const project = await prisma.project.findFirst({
       where: {
@@ -149,7 +150,7 @@ export async function PUT(request: Request) {
       return NextResponse.json({ message: 'Project restored' });
     }
 
-    if (!name && pinned === undefined) {
+    if (!name && pinned === undefined && type === undefined) {
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
     }
 
@@ -158,6 +159,7 @@ export async function PUT(request: Request) {
       data: {
         ...(name ? { name } : {}),
         ...(pinned !== undefined ? { pinned } : {}),
+        ...(type ? { type } : {}),
       }
     });
 

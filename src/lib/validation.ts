@@ -42,10 +42,12 @@ export const reorderSchema = z.object({
 
 export const projectCreateSchema = z.object({
   name: z.string().trim().min(1).max(80),
+  type: z.enum(['general', 'study', 'work', 'personal']).optional(),
 });
 
 export const projectUpdateSchema = z.object({
   id: z.string(),
   name: z.string().trim().min(1).max(80).optional(),
   pinned: z.boolean().optional(),
+  type: z.enum(['general', 'study', 'work', 'personal']).optional(),
 });

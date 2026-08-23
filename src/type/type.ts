@@ -3,6 +3,7 @@ export type Project = {
   name: string;
   userId: string;
   createdAt: string;
+  type?: string;
   pinned?: boolean;
   pendingCount?: number;
 };
