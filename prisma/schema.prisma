@@ -45,9 +45,28 @@ model User {
   accounts      Account[]
   list          List[]
   projects      Project[]
+  habits        Habit[]
 
   @@unique([email])
   @@map("user")
+}
+
+model Habit {
+  id        String     @id @default(uuid()) @db.Uuid
+  name      String
+  createdAt DateTime   @default(now())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String     @db.Uuid
+  logs      HabitLog[]
+}
+
+model HabitLog {
+  id      String   @id @default(uuid()) @db.Uuid
+  habitId String   @db.Uuid
+  habit   Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  date    DateTime @db.Date
+
+  @@unique([habitId, date])
 }
 
 model Session {

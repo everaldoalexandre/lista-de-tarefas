@@ -9,7 +9,7 @@ import AddTask from './AddTask';
 import SearchPalette from './SearchPalette';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ThemeToggle } from './ThemeToggle';
-import { MenuIcon, ChevronLeftIcon, ChevronRightIcon, DeleteIcon, EditIcon, SettingsIcon, SearchIcon } from './Lucide';
+import { MenuIcon, ChevronLeftIcon, ChevronRightIcon, DeleteIcon, EditIcon, SettingsIcon, SearchIcon, FlameIcon } from './Lucide';
 import type { Project } from '@/type/type';
 import { toast } from "sonner";
 
@@ -154,6 +154,14 @@ export default function HomeContent() {
         </button>
         <CurrentDate />
         <div className="flex items-center gap-1">
+          <Link
+            href="/habits"
+            className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-accent transition-colors"
+            title="Habits"
+            aria-label="Habits"
+          >
+            <FlameIcon />
+          </Link>
           <ThemeToggle />
           <Logout />
         </div>
@@ -234,6 +242,14 @@ export default function HomeContent() {
               <SearchIcon />
               <kbd className="hidden lg:block rounded border border-border bg-muted px-1.5 text-xs">Ctrl K</kbd>
             </button>
+            <Link
+              href="/habits"
+              className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-accent transition-colors"
+              title="Habits"
+              aria-label="Habits"
+            >
+              <FlameIcon />
+            </Link>
             <Link
               href="/settings"
               className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-accent transition-colors"
