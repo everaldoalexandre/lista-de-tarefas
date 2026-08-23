@@ -1,5 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma, isPrismaError } from "@/lib/prisma";
+import { clientKey, rateLimit } from "@/lib/rate-limit";
+import { projectCreateSchema, projectUpdateSchema } from "@/lib/validation";
 import { headers } from "next/headers";
 import { NextResponse } from 'next/server';
 
@@ -48,10 +50,6 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-
-    const { name } = body;
-
     const session = await auth.api.getSession({
       headers: await headers()
     });
@@ -63,13 +61,21 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!name || !name.trim()) {
+    if (!rateLimit(clientKey(request, "projects:create"))) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
+    const parsed = projectCreateSchema.safeParse(await request.json());
+
+    if (!parsed.success) {
       return NextResponse.json({ error: 'Name is mandatory' }, { status: 400 });
     }
 
+    const { name } = parsed.data;
+
     const project = await prisma.project.create({
       data: {
-        name: name.trim(),
+        name,
         userId: session.user.id
       }
     });
@@ -97,10 +103,6 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const body = await request.json();
-
-    const { id, name } = body;
-
     const session = await auth.api.getSession({
       headers: await headers()
     });
@@ -112,13 +114,17 @@ export async function PUT(request: Request) {
       );
     }
 
-    if (!id) {
-      return NextResponse.json({ error: 'ID is mandatory' }, { status: 400 });
+    if (!rateLimit(clientKey(request, "projects:update"))) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
-    if (!name || !name.trim()) {
-      return NextResponse.json({ error: 'Name is mandatory' }, { status: 400 });
+    const parsed = projectUpdateSchema.safeParse(await request.json());
+
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'ID and name are mandatory' }, { status: 400 });
     }
+
+    const { id, name } = parsed.data;
 
     const project = await prisma.project.findFirst({
       where: {

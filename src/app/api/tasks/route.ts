@@ -1,31 +1,45 @@
 import { auth } from "@/lib/auth";
 import { prisma, isPrismaError } from "@/lib/prisma";
+import { clientKey, rateLimit } from "@/lib/rate-limit";
+import {
+  reorderSchema,
+  taskCreateSchema,
+  taskUpdateSchema,
+} from "@/lib/validation";
+import { nextOccurrence, type Recurrence } from "@/lib/task-utils";
 import { headers } from "next/headers";
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
 interface UpdateData {
   status?: string;
   description?: string;
   date?: Date | null;
+  recurrence?: string | null;
   projectId?: string | null;
 }
 
 async function getSession() {
-  return auth.api.getSession({
-    headers: await headers()
-  });
+  return auth.api.getSession({ headers: await headers() });
 }
 
 function unauthorized() {
-  return Response.json(
-    { error: 'Unauthenticated user' },
-    { status: 401 }
+  return Response.json({ error: "Unauthenticated user" }, { status: 401 });
+}
+
+function invalid(errors: unknown) {
+  return NextResponse.json(
+    { error: "Invalid request body", details: errors },
+    { status: 400 }
   );
+}
+
+function limited(request: Request, scope: string) {
+  return !rateLimit(clientKey(request, scope));
 }
 
 async function assertProjectOwnership(projectId: string, userId: string) {
   const project = await prisma.project.findFirst({
-    where: { id: String(projectId), userId }
+    where: { id: String(projectId), userId },
   });
   return project !== null;
 }
@@ -39,14 +53,23 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const projectId = searchParams.get('projectId');
+    const projectId = searchParams.get("projectId");
+    const range = searchParams.get("range");
+    const all = searchParams.get("all") === "1";
+
+    const where = {
+      userId: session.user.id,
+      ...(all ? {} : { projectId: projectId || null }),
+      ...(range === "today"
+        ? { status: "pending", date: { lte: endOfToday() } }
+        : {}),
+      ...(range === "week" ? { status: "pending", date: { lte: endOfWeek() } } : {}),
+    };
 
     const list = await prisma.list.findMany({
-      where: {
-        userId: session.user.id,
-        projectId: projectId || null
-      },
-      orderBy: { order: 'asc' }
+      where,
+      orderBy: { order: "asc" },
+      include: all ? { project: true } : undefined,
     });
 
     const listEnd = list.map((task, index) => ({
@@ -56,12 +79,26 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ list: listEnd });
   } catch (error) {
-    console.error('Error when searching for tasks:', error);
-    return NextResponse.json({ error: 'Error when searching for tasks' }, { status: 500 });
+    console.error("Error when searching for tasks:", error);
+    return NextResponse.json(
+      { error: "Error when searching for tasks" },
+      { status: 500 }
+    );
   }
 }
 
-//POST
+function endOfToday() {
+  const d = new Date();
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
+
+function endOfWeek() {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
 
 export async function POST(request: Request) {
   try {
@@ -71,68 +108,73 @@ export async function POST(request: Request) {
       return unauthorized();
     }
 
-    const body = await request.json();
-
-    const { newTask } = body;
-
-    if (!newTask) {
-      return NextResponse.json({ error: 'newTask is mandatory' }, { status: 400 });
+    if (limited(request, "tasks:create")) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
-    if (!newTask.description || !newTask.description.trim()) {
-      return NextResponse.json({ error: 'Description is mandatory' }, { status: 400 });
-    }
+    const parsed = taskCreateSchema.safeParse(await request.json());
+    if (!parsed.success) return invalid(parsed.error.flatten());
 
-    if (newTask.projectId && !(await assertProjectOwnership(newTask.projectId, session.user.id))) {
-      return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+    const newTask = parsed.data.newTask;
+
+    if (
+      newTask.projectId &&
+      !(await assertProjectOwnership(newTask.projectId, session.user.id))
+    ) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
     let validDate: Date | null = null;
     if (newTask.date) {
       validDate = new Date(newTask.date);
       if (isNaN(validDate.getTime())) {
-        return NextResponse.json({ error: 'invalid date' }, { status: 400 });
+        return NextResponse.json({ error: "invalid date" }, { status: 400 });
       }
     }
 
-    const order = (await prisma.list.count({
-      where: {
-        userId: session.user.id,
-        projectId: newTask.projectId || null
-      }
-    })) + 1;
+    const order =
+      (await prisma.list.count({
+        where: {
+          userId: session.user.id,
+          projectId: newTask.projectId || null,
+        },
+      })) + 1;
 
     const task = await prisma.list.create({
       data: {
-        status: 'pending',
+        status: "pending",
         description: newTask.description.trim(),
         date: validDate,
+        recurrence: newTask.recurrence && newTask.recurrence !== 'none' ? newTask.recurrence : null,
         order,
         projectId: newTask.projectId || null,
-        userId: session.user.id
-      }
+        userId: session.user.id,
+      },
     });
 
-    return NextResponse.json({
-      message: 'Task added successfully',
-      task
-    }, { status: 201 });
-
+    return NextResponse.json(
+      { message: "Task added successfully", task },
+      { status: 201 }
+    );
   } catch (error) {
-    console.error('Error creating task:', error);
+    console.error("Error creating task:", error);
 
-    if (isPrismaError(error) && error.code === 'P2002') {
-      return NextResponse.json({ error: 'Task already exists' }, { status: 409 });
+    if (isPrismaError(error) && error.code === "P2002") {
+      return NextResponse.json({ error: "Task already exists" }, { status: 409 });
     }
 
-    return NextResponse.json({
-      error: 'Internal error creating task',
-      details: process.env.NODE_ENV === 'development' && isPrismaError(error) ? error.message : undefined
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "Internal error creating task",
+        details:
+          process.env.NODE_ENV === "development" && isPrismaError(error)
+            ? error.message
+            : undefined,
+      },
+      { status: 500 }
+    );
   }
 }
-
-//DELETE
 
 export async function DELETE(request: Request) {
   try {
@@ -142,32 +184,33 @@ export async function DELETE(request: Request) {
       return unauthorized();
     }
 
+    if (limited(request, "tasks:delete")) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const { id } = await request.json();
 
     if (!id) {
-      return NextResponse.json({ error: 'ID is mandatory' }, { status: 400 });
+      return NextResponse.json({ error: "ID is mandatory" }, { status: 400 });
     }
 
     const deleted = await prisma.list.deleteMany({
-      where: {
-        id: String(id),
-        userId: session.user.id
-      },
+      where: { id: String(id), userId: session.user.id },
     });
 
     if (deleted.count === 0) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ message: 'Task deleted successfully' });
-
+    return NextResponse.json({ message: "Task deleted successfully" });
   } catch (error) {
-    console.error('Error deleting task:', error);
-    return NextResponse.json({ error: 'Internal error while deleting task' }, { status: 500 });
+    console.error("Error deleting task:", error);
+    return NextResponse.json(
+      { error: "Internal error while deleting task" },
+      { status: 500 }
+    );
   }
 }
-
-//PUT
 
 export async function PUT(request: Request) {
   try {
@@ -177,90 +220,68 @@ export async function PUT(request: Request) {
       return unauthorized();
     }
 
+    if (limited(request, "tasks:update")) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const body = await request.json();
 
-    if (Array.isArray(body.order)) {
-      const { order } = body;
-
-      if (order.length === 0) {
-        return NextResponse.json({ message: 'Order updated successfully!' });
-      }
-
-      const ids = order.map(String);
+    const reorderParsed = reorderSchema.safeParse(body);
+    if (reorderParsed.success) {
+      const ids = reorderParsed.data.order;
       const ownedCount = await prisma.list.count({
-        where: {
-          id: { in: ids },
-          userId: session.user.id
-        }
+        where: { id: { in: ids }, userId: session.user.id },
       });
 
       if (ownedCount !== ids.length) {
-        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+        return NextResponse.json({ error: "Task not found" }, { status: 404 });
       }
 
       await prisma.$transaction(
-        ids.map((id: string, index: number) =>
-          prisma.list.update({
-            where: { id },
-            data: { order: index },
-          })
+        ids.map((id, index) =>
+          prisma.list.update({ where: { id }, data: { order: index } })
         )
       );
 
-      return NextResponse.json({ message: 'Order updated successfully!' });
+      return NextResponse.json({ message: "Order updated successfully!" });
     }
 
-    const { id, status, description, date, projectId } = body;
+    const updateParsed = taskUpdateSchema.safeParse(body);
+    if (!updateParsed.success) return invalid(updateParsed.error.flatten());
 
-    if (!id) {
-      return NextResponse.json({ error: 'ID is mandatory' }, { status: 400 });
-    }
+    const { id, status, description, date, projectId, recurrence } = updateParsed.data;
 
     const updateData: UpdateData = {};
 
-    if (status !== undefined) {
-      if (status !== 'pending' && status !== 'completed') {
-        return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
-      }
-      updateData.status = status;
-    }
-    if (description !== undefined) {
-      if (!description.trim()) {
-        return NextResponse.json({ error: 'Description cannot be empty' }, { status: 400 });
-      }
-      updateData.description = description.trim();
-    }
+    if (status !== undefined) updateData.status = status;
+    if (description !== undefined) updateData.description = description.trim();
     if (date !== undefined) {
-      if (date === null || date === '') {
+      if (date === null || date === "") {
         updateData.date = null;
       } else {
         const validDate = new Date(date);
         if (isNaN(validDate.getTime())) {
-          return NextResponse.json({ error: 'Invalid date' }, { status: 400 });
+          return NextResponse.json({ error: "Invalid date" }, { status: 400 });
         }
         updateData.date = validDate;
       }
     }
     if (projectId !== undefined) {
       if (projectId && !(await assertProjectOwnership(projectId, session.user.id))) {
-        return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+        return NextResponse.json({ error: "Project not found" }, { status: 404 });
       }
       updateData.projectId = projectId || null;
     }
-
-    if (Object.keys(updateData).length === 0) {
-      return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+    if (recurrence !== undefined) {
+      updateData.recurrence = recurrence && recurrence !== "none" ? recurrence : null;
     }
 
     const existing = await prisma.list.findFirst({
-      where: {
-        id: String(id),
-        userId: session.user.id
-      }
+      where: { id: String(id), userId: session.user.id },
     });
 
     if (!existing) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      return NextResponse.json({ error: "Task not found" }, { status: 404 });
     }
 
     const task = await prisma.list.update({
@@ -268,18 +289,43 @@ export async function PUT(request: Request) {
       data: updateData,
     });
 
-    return NextResponse.json({
-      message: 'Task updated successfully',
-      task
-    });
+    if (
+      status === "completed" &&
+      existing.recurrence &&
+      ["daily", "weekly", "monthly"].includes(existing.recurrence)
+    ) {
+      const order =
+        (await prisma.list.count({
+          where: { userId: session.user.id, projectId: existing.projectId },
+        })) + 1;
 
-  } catch (error) {
-    console.error('Error updating task:', error);
-
-    if (isPrismaError(error) && error.code === 'P2025') {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      await prisma.list.create({
+        data: {
+          status: "pending",
+          description: existing.description,
+          date: nextOccurrence(existing.date, existing.recurrence as Recurrence),
+          recurrence: existing.recurrence,
+          order,
+          projectId: existing.projectId,
+          userId: session.user.id,
+        },
+      });
     }
 
-    return NextResponse.json({ error: 'Internal error while updating task' }, { status: 500 });
+    return NextResponse.json({
+      message: "Task updated successfully",
+      task,
+    });
+  } catch (error) {
+    console.error("Error updating task:", error);
+
+    if (isPrismaError(error) && error.code === "P2025") {
+      return NextResponse.json({ error: "Task not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(
+      { error: "Internal error while updating task" },
+      { status: 500 }
+    );
   }
 }

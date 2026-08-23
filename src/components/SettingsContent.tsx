@@ -17,6 +17,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import ChangePasswordForm from '@/components/ChangePasswordForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -38,6 +40,52 @@ const ideas = [
 
 export default function SettingsContent() {
   const { theme, setTheme } = useTheme();
+
+  async function exportData(format: 'json' | 'csv') {
+    try {
+      const [projectsRes, tasksRes] = await Promise.all([
+        fetch('/api/projects'),
+        fetch('/api/tasks?all=1'),
+      ]);
+
+      if (!projectsRes.ok || !tasksRes.ok) throw new Error('export failed');
+
+      const projects = (await projectsRes.json()).projects ?? [];
+      const tasks = (await tasksRes.json()).list ?? [];
+
+      let content: string;
+      let filename: string;
+
+      if (format === 'json') {
+        content = JSON.stringify({ exportedAt: new Date().toISOString(), projects, tasks }, null, 2);
+        filename = 'tasks-export.json';
+      } else {
+        const header = 'description,status,date,project';
+        const rows = tasks.map((t: { description: string; status: string; date: string | null; project?: { name?: string } | null }) =>
+          [
+            `"${t.description.replace(/"/g, '""')}"`,
+            t.status,
+            t.date ? new Date(t.date).toISOString().slice(0, 10) : '',
+            `"${t.project?.name ?? ''}"`,
+          ].join(',')
+        );
+        content = [header, ...rows].join('\n');
+        filename = 'tasks-export.csv';
+      }
+
+      const blob = new Blob([content], { type: `text/${format};charset=utf-8` });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      toast.success('Export downloaded!');
+    } catch {
+      toast.error('Failed to export your data.');
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background font-sans">
@@ -87,6 +135,29 @@ export default function SettingsContent() {
 
           <ChangePasswordForm />
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Your data</CardTitle>
+            <CardDescription>Download a copy of your projects and tasks.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => exportData('json')}
+            >
+              Export JSON
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => exportData('csv')}
+            >
+              Export CSV
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

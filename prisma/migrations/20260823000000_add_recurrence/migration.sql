@@ -1,0 +1,1 @@
+ALTER TABLE "List" ADD COLUMN "recurrence" TEXT;
