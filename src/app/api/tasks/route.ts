@@ -15,6 +15,9 @@ interface UpdateData {
   description?: string;
   date?: Date | null;
   recurrence?: string | null;
+  priority?: string | null;
+  pinned?: boolean;
+  tags?: string[];
   projectId?: string | null;
 }
 
@@ -145,7 +148,12 @@ export async function POST(request: Request) {
         status: "pending",
         description: newTask.description.trim(),
         date: validDate,
-        recurrence: newTask.recurrence && newTask.recurrence !== 'none' ? newTask.recurrence : null,
+        recurrence:
+          newTask.recurrence && newTask.recurrence !== "none"
+            ? newTask.recurrence
+            : null,
+        priority: newTask.priority ?? null,
+        tags: newTask.tags ?? [],
         order,
         projectId: newTask.projectId || null,
         userId: session.user.id,
@@ -249,7 +257,7 @@ export async function PUT(request: Request) {
     const updateParsed = taskUpdateSchema.safeParse(body);
     if (!updateParsed.success) return invalid(updateParsed.error.flatten());
 
-    const { id, status, description, date, projectId, recurrence } = updateParsed.data;
+    const { id, status, description, date, projectId, recurrence, priority, pinned, tags } = updateParsed.data;
 
     const updateData: UpdateData = {};
 
@@ -275,6 +283,9 @@ export async function PUT(request: Request) {
     if (recurrence !== undefined) {
       updateData.recurrence = recurrence && recurrence !== "none" ? recurrence : null;
     }
+    if (priority !== undefined) updateData.priority = priority ?? null;
+    if (pinned !== undefined) updateData.pinned = pinned;
+    if (tags !== undefined) updateData.tags = tags;
 
     const existing = await prisma.list.findFirst({
       where: { id: String(id), userId: session.user.id },

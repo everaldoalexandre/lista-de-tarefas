@@ -31,6 +31,7 @@ export default function HomeContent() {
   const [nameEdit, setNameEdit] = useState('');
   const [showModalDelete, setShowModalDelete] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
 
   const loadProjects = useCallback(async () => {
     try {
@@ -253,6 +254,15 @@ export default function HomeContent() {
                 <div className="w-full flex items-center justify-between gap-2">
                   <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">{selectedProject.name}</h2>
                   <div className="flex items-center gap-1">
+                    <div className="flex rounded-lg border border-border overflow-hidden mr-1">
+                      {(['list', 'board'] as const).map((mode) => (
+                        <button key={mode} type="button"
+                          onClick={() => setViewMode(mode)}
+                          className={`px-3 py-1 text-xs font-semibold capitalize transition-colors ${viewMode === mode ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-accent'}`}>
+                          {mode}
+                        </button>
+                      ))}
+                    </div>
                     <button
                       type="button"
                       className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-accent transition-colors"
@@ -287,6 +297,7 @@ export default function HomeContent() {
             query={tasksQuery}
             projectId={smartList ? undefined : selectedProject?.id}
             readOnly={!!smartList}
+            view={viewMode}
             onTasksChanged={loadProjects}
           />
         )}

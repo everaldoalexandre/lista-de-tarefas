@@ -1,5 +1,23 @@
 export type Recurrence = 'daily' | 'weekly' | 'monthly';
 
+export const STATUS_COLUMNS = [
+  { key: 'todo', label: 'To do' },
+  { key: 'doing', label: 'Doing' },
+  { key: 'done', label: 'Done' },
+] as const;
+
+export function normalizeStatus(status: string) {
+  if (status === 'pending') return 'todo';
+  if (status === 'completed') return 'done';
+  return status;
+}
+
+export const priorityStyles: Record<string, string> = {
+  high: 'bg-destructive/15 text-destructive',
+  medium: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+  low: 'bg-muted text-muted-foreground',
+};
+
 function startOfDay(date: Date) {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);

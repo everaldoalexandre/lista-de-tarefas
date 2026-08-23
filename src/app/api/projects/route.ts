@@ -121,10 +121,14 @@ export async function PUT(request: Request) {
     const parsed = projectUpdateSchema.safeParse(await request.json());
 
     if (!parsed.success) {
-      return NextResponse.json({ error: 'ID and name are mandatory' }, { status: 400 });
+      return NextResponse.json({ error: 'ID is mandatory' }, { status: 400 });
     }
 
-    const { id, name } = parsed.data;
+    const { id, name, pinned } = parsed.data;
+
+    if (!name && pinned === undefined) {
+      return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
+    }
 
     const project = await prisma.project.findFirst({
       where: {
@@ -139,7 +143,10 @@ export async function PUT(request: Request) {
 
     const updated = await prisma.project.update({
       where: { id: project.id },
-      data: { name: name.trim() }
+      data: {
+        ...(name ? { name } : {}),
+        ...(pinned !== undefined ? { pinned } : {}),
+      }
     });
 
     return NextResponse.json({

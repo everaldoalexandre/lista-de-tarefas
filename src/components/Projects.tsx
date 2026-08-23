@@ -52,6 +52,24 @@ export default function Projects({ projects, reloadProjects, loading, smartList,
     );
   }
 
+  async function togglePin(project: Project) {
+    try {
+      const response = await fetch('/api/projects', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: project.id, pinned: !project.pinned }),
+      });
+      if (!response.ok) throw new Error('failed');
+      await reloadProjects();
+    } catch {
+      toast.error('Could not update the project.');
+    }
+  }
+
+  const sortedProjects = [...projects].sort(
+    (a, b) => Number(b.pinned ?? false) - Number(a.pinned ?? false)
+  );
+
   const smartItems = [
     { key: 'today' as const, label: 'Today', icon: CalendarDays },
     { key: 'week' as const, label: 'Next 7 days', icon: CalendarRange },
@@ -95,8 +113,8 @@ export default function Projects({ projects, reloadProjects, loading, smartList,
       )}
 
       <ul className={`flex gap-2 overflow-y-auto ${collapsed ? 'flex-col items-center' : 'flex-col'}`}>
-        {projects.map((project) => (
-          <li key={project.id} className={collapsed ? 'flex' : ''}>
+        {sortedProjects.map((project) => (
+          <li key={project.id} className={collapsed ? 'flex' : 'group relative'}>
             <button
               type="button"
               onClick={() => onSelectProject(project)}
@@ -107,13 +125,24 @@ export default function Projects({ projects, reloadProjects, loading, smartList,
             >
               {collapsed ? project.name.charAt(0).toUpperCase() : (
                 <span className="flex items-center justify-between gap-2">
-                  <span className="truncate">{project.name}</span>
+                  <span className="truncate">{project.pinned && '★ '}{project.name}</span>
                   <span className={`text-xs font-bold rounded-full px-2 py-0.5 ${selectedProjectId === project.id ? 'bg-primary-foreground/20' : 'bg-muted'}`}>
                     {project.pendingCount ?? 0}
                   </span>
                 </span>
               )}
             </button>
+            {!collapsed && (
+              <button
+                type="button"
+                onClick={() => togglePin(project)}
+                title={project.pinned ? 'Unpin project' : 'Pin project'}
+                aria-label={project.pinned ? 'Unpin project' : 'Pin project'}
+                className={`absolute right-2 top-1/2 -translate-y-1/2 text-sm transition-opacity ${project.pinned ? 'text-amber-500 opacity-100' : 'text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-amber-500'}`}
+              >
+                ★
+              </button>
+            )}
           </li>
         ))}
       </ul>
