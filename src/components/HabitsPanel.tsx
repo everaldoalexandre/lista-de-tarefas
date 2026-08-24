@@ -21,6 +21,13 @@ type Habit = {
   streak: number;
 };
 
+type Stats = {
+  xp: number;
+  level: number;
+  levelProgress: number;
+  achievements: { key: string; label: string; description: string; earned: boolean }[];
+};
+
 function dayKey(offset = 0) {
   const d = new Date();
   d.setDate(d.getDate() + offset);
@@ -29,9 +36,17 @@ function dayKey(offset = 0) {
 
 export default function HabitsPanel() {
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setStats)
+      .catch(() => setStats(null));
+  }, []);
 
   const last7 = Array.from({ length: 7 }, (_, i) => dayKey(i - 6));
 
@@ -145,6 +160,31 @@ export default function HabitsPanel() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8 flex flex-col gap-6">
+        {stats && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Your progress</CardTitle>
+              <CardDescription>Level {stats.level} · {stats.xp} XP</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <div className="h-2 rounded-full bg-muted overflow-hidden" aria-label={`${stats.levelProgress}% to next level`}>
+                <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${stats.levelProgress}%` }} />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {stats.achievements.map((achievement) => (
+                  <span
+                    key={achievement.key}
+                    title={achievement.description}
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${achievement.earned ? 'bg-primary text-primary-foreground' : 'border border-border text-muted-foreground opacity-60'}`}
+                  >
+                    {achievement.earned ? '🏆 ' : ''}{achievement.label}
+                  </span>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle>New habit</CardTitle>
