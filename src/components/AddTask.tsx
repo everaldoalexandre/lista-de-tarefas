@@ -15,7 +15,7 @@ function toDateInputValue(date: Date) {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
-export default function AddTask({ query, projectId, readOnly, view = 'list', onTasksChanged }: { query: string; projectId?: string; readOnly?: boolean; view?: 'list' | 'board'; onTasksChanged: () => void }) {
+export default function AddTask({ query, projectId, readOnly, view = 'list', onTasksChanged }: { query: string; projectId?: string; readOnly?: boolean; view?: 'list' | 'board' | 'calendar'; onTasksChanged: () => void }) {
   const [list, setList] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [description, setDescription] = useState('');
@@ -28,6 +28,7 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [taskSelected, setTaskSelected] = useState<Task | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [monthOffset, setMonthOffset] = useState(0);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
   const [taskEdit, setTaskEdit] = useState<Task | null>(null);
@@ -445,6 +446,90 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
 
   const doneGridClass = 'grid grid-cols-[30px_1fr_auto] items-center gap-2 p-2 rounded-lg bg-muted text-muted-foreground line-through';
   const todoGridClass = 'grid grid-cols-[30px_1fr_auto] items-center gap-2 p-2 rounded-lg bg-card border border-border shadow-sm hover:shadow transition-shadow text-card-foreground';
+
+  if (view === 'calendar') {
+    const base = new Date();
+    base.setDate(1);
+    base.setMonth(base.getMonth() + monthOffset);
+    const year = base.getFullYear();
+    const month = base.getMonth();
+    const firstDow = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const cells: (number | null)[] = [
+      ...Array.from({ length: firstDow }, () => null),
+      ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+    ];
+    const byDay: Record<number, Task[]> = {};
+    for (const t of list) {
+      if (!t.date) continue;
+      if (t.date.getFullYear() === year && t.date.getMonth() === month) {
+        (byDay[t.date.getDate()] ??= []).push(t);
+      }
+    }
+    const today = new Date();
+    const monthLabel = base.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    return (
+      <div className="flex flex-col gap-4 p-4 w-full">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold text-foreground capitalize">{monthLabel}</h3>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setMonthOffset(monthOffset - 1)} aria-label="Previous month"
+              className="px-3 py-1 rounded-lg bg-accent text-accent-foreground hover:bg-accent/80 text-sm font-semibold transition-colors">‹</button>
+            <button type="button" onClick={() => setMonthOffset(0)} className="px-3 py-1 rounded-lg bg-accent text-accent-foreground hover:bg-accent/80 text-sm font-medium transition-colors">Today</button>
+            <button type="button" onClick={() => setMonthOffset(monthOffset + 1)} aria-label="Next month"
+              className="px-3 py-1 rounded-lg bg-accent text-accent-foreground hover:bg-accent/80 text-sm font-semibold transition-colors">›</button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold uppercase tracking-wide text-muted-foreground">
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+            <span key={d}>{d}</span>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-1">
+          {cells.map((day, i) => {
+            const isToday =
+              day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+            const dayTasks = day ? sortPinned(byDay[day] ?? []) : [];
+            return (
+              <div
+                key={i}
+                className={`min-h-[84px] rounded-lg border p-1.5 text-xs ${
+                  day ? 'border-border bg-card' : 'border-transparent'
+                } ${isToday ? 'ring-2 ring-primary' : ''}`}
+              >
+                {day && <span className={`font-bold ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>{day}</span>}
+                <div className="mt-0.5 flex flex-col gap-0.5">
+                  {dayTasks.slice(0, 3).map((t) => (
+                    <span
+                      key={t.id}
+                      title={t.description}
+                      className={`truncate rounded px-1 py-0.5 text-[11px] font-medium ${
+                        t.status === 'done'
+                          ? 'bg-muted text-muted-foreground line-through'
+                          : t.priority === 'high'
+                            ? 'bg-destructive/15 text-destructive'
+                            : 'bg-primary/10 text-primary dark:bg-primary/20'
+                      }`}
+                    >
+                      {t.description}
+                    </span>
+                  ))}
+                  {dayTasks.length > 3 && (
+                    <span className="px-1 text-[10px] text-muted-foreground">+{dayTasks.length - 3} more</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {taskDialogs()}
+      </div>
+    );
+  }
 
   if (view === 'board' && !readOnly) {
     return (

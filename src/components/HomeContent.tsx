@@ -326,11 +326,11 @@ export default function HomeContent() {
                       ))}
                     </select>
                     <div className="flex rounded-lg border border-border overflow-hidden mr-1">
-                      {(['list', 'board'] as const).map((mode) => (
+                      {(['list', 'board', 'calendar'] as const).map((mode) => (
                         <button key={mode} type="button"
                           onClick={() => setViewMode(mode)}
                           className={`px-3 py-1 text-xs font-semibold capitalize transition-colors ${viewMode === mode ? 'bg-primary text-primary-foreground' : 'bg-background text-muted-foreground hover:bg-accent'}`}>
-                          {mode}
+                          {mode === 'calendar' ? 'cal' : mode}
                         </button>
                       ))}
                     </div>
