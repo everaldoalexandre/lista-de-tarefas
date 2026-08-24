@@ -8,6 +8,13 @@ export type Project = {
   pendingCount?: number;
 };
 
+export type SubTask = {
+  id: string;
+  description: string;
+  done: boolean;
+  order?: number | null;
+};
+
 export type Task = {
   id: string;
   description: string;
@@ -20,4 +27,5 @@ export type Task = {
   order: number;
   projectId: string | null;
   userId: string;
+  subtasks?: SubTask[];
 };

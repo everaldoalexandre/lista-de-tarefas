@@ -74,7 +74,10 @@ export async function GET(request: Request) {
     const list = await prisma.list.findMany({
       where,
       orderBy: { order: "asc" },
-      include: all ? { project: true } : undefined,
+      include: {
+        ...(all ? { project: true } : {}),
+        subtasks: { orderBy: { order: "asc" } },
+      },
     });
 
     const listEnd = list.map((task, index) => ({

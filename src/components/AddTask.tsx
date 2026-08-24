@@ -35,6 +35,8 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
   const [descriptionEdit, setDescriptionEdit] = useState('');
   const [dateEdit, setDateEdit] = useState('');
   const editDescriptionRef = useRef<HTMLTextAreaElement>(null);
+  const [subtasks, setSubtasks] = useState<{ id: string; description: string; done: boolean }[]>([]);
+  const [newSubtask, setNewSubtask] = useState('');
 
   useEffect(() => {
     const el = editDescriptionRef.current;
@@ -362,6 +364,56 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
     setTaskEdit(task);
     setDescriptionEdit(task.description);
     setDateEdit(task.date ? toDateInputValue(task.date) : '');
+    setSubtasks(task.subtasks ?? []);
+    setNewSubtask('');
+  }
+
+  async function addSubtask(e: React.FormEvent) {
+    e.preventDefault();
+    if (!taskEdit || !newSubtask.trim()) return;
+    const description = newSubtask.trim();
+    setNewSubtask('');
+
+    try {
+      const response = await fetch('/api/subtasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId: taskEdit.id, description }),
+      });
+      if (!response.ok) throw new Error();
+      const { subtask } = await response.json();
+      setSubtasks((prev) => [...prev, subtask]);
+    } catch {
+      toast.error('Could not add the step.');
+    }
+  }
+
+  async function toggleSubtask(st: { id: string; done: boolean }) {
+    setSubtasks((prev) => prev.map((s) => (s.id === st.id ? { ...s, done: !st.done } : s)));
+    try {
+      const response = await fetch('/api/subtasks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: st.id, done: !st.done }),
+      });
+      if (!response.ok) throw new Error();
+    } catch {
+      toast.error('Could not update the step.');
+      setSubtasks((prev) => prev.map((s) => (s.id === st.id ? { ...s, done: st.done } : s)));
+    }
+  }
+
+  async function removeSubtask(id: string) {
+    setSubtasks((prev) => prev.filter((s) => s.id !== id));
+    try {
+      await fetch('/api/subtasks', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+    } catch {
+      toast.error('Could not remove the step.');
+    }
   }
 
   function badges(newTask: Task) {
@@ -625,8 +677,27 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
               rows={1}
               className="w-full min-h-[64px] max-h-48 text-foreground p-2 rounded-lg border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring resize-none overflow-hidden"
             />
-            <input type="date" value={dateEdit} onChange={(e) => setDateEdit(e.target.value)}
-              className="w-full text-foreground p-2 rounded-lg border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring" />
+          <input type="date" value={dateEdit} onChange={(e) => setDateEdit(e.target.value)}
+            className="w-full text-foreground p-2 rounded-lg border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring" />
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-semibold text-muted-foreground">Checklist</span>
+            {subtasks.map((st) => (
+              <div key={st.id} className="flex items-center gap-2">
+                <input type="checkbox" checked={st.done} onChange={() => toggleSubtask(st)}
+                  aria-label={st.description}
+                  className="w-4 h-4 accent-foreground cursor-pointer" />
+                <span className={`flex-1 text-sm text-foreground ${st.done ? 'line-through text-muted-foreground' : ''}`}>{st.description}</span>
+                <button type="button" onClick={() => removeSubtask(st.id)} aria-label="Remove step"
+                  className="text-muted-foreground hover:text-destructive transition-colors px-1">✕</button>
+              </div>
+            ))}
+            <form onSubmit={addSubtask} className="flex gap-2">
+              <input value={newSubtask} onChange={(e) => setNewSubtask(e.target.value)} placeholder="Add a step..."
+                aria-label="New step"
+                className="flex-1 p-2 rounded-lg border border-border bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring" />
+              <button type="submit" className="px-3 rounded-lg bg-accent text-accent-foreground hover:bg-accent/80 text-sm font-medium transition-colors">+</button>
+            </form>
+          </div>
             <DialogFooter>
               <button className="px-4 py-2 rounded-lg font-medium text-foreground bg-accent hover:bg-accent/80 transition-colors" onClick={() => setTaskEdit(null)}>Cancel</button>
               <button className="px-4 py-2 rounded-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
