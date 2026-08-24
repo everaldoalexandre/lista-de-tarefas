@@ -712,56 +712,59 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
   return (
     <div className="flex flex-col gap-4 p-4 min-h-[180px] w-full max-w-2xl">
       {!readOnly && projectId && (
-        <form onSubmit={addTask} className="flex flex-col sm:flex-row gap-2 bg-card border border-border shadow-sm p-3 rounded-2xl w-full">
-          <textarea
-            ref={descriptionRef}
-            value={description}
-            onChange={(e) => {
-              setDescription(e.target.value);
-              autoResize();
-            }}
-            placeholder="Enter a new task"
-            rows={1}
-            style={{ minHeight: '64px' }}
-            className="p-2 rounded-lg w-full text-foreground placeholder:text-muted-foreground resize-none overflow-hidden bg-transparent outline-none"
-          />
-          <div className="flex gap-2 items-center sm:flex-none flex-wrap">
-            <button
-              type="button"
-              onClick={() => setShowDateInput(!showDateInput)}
-              className="bg-accent text-accent-foreground hover:bg-accent/80 p-2 rounded-xl shrink-0 transition-colors"
-              title="Add date, repeat, priority and tags"
-              aria-label="More options"
-            >
-              <CalendarIcon />
-            </button>
-            {showDateInput && (
-              <div className="flex gap-2 flex-wrap">
-                <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-                  className="p-1 rounded-lg bg-accent text-foreground sm:w-36" aria-label="Due date" />
-                <select value={recurrence} onChange={(e) => setRecurrence(e.target.value)}
-                  className="p-1 rounded-lg bg-accent text-foreground" aria-label="Repeat">
-                  <option value="none">Once</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                </select>
-                <select value={priority} onChange={(e) => setPriority(e.target.value)}
-                  className="p-1 rounded-lg bg-accent text-foreground capitalize" aria-label="Priority">
-                  <option value="none">No priority</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
-                <input type="text" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)}
-                  placeholder="tags, comma separated" aria-label="Tags"
-                  className="p-1 rounded-lg bg-accent text-foreground placeholder:text-muted-foreground sm:w-40" />
-              </div>
-            )}
-            <button type="submit" disabled={submitting} className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-xl shrink-0 disabled:opacity-50 font-bold transition-colors" aria-label="Add task">
-              +
-            </button>
+        <form onSubmit={addTask} className="flex flex-col gap-2 bg-card border border-border shadow-sm p-3 rounded-2xl w-full">
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-start">
+            <textarea
+              ref={descriptionRef}
+              value={description}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                autoResize();
+              }}
+              placeholder="Enter a new task"
+              rows={1}
+              style={{ minHeight: '64px' }}
+              className="p-2 rounded-lg flex-1 text-foreground placeholder:text-muted-foreground resize-none overflow-hidden bg-transparent outline-none"
+            />
+            <div className="flex gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowDateInput(!showDateInput)}
+                aria-expanded={showDateInput}
+                className={`p-2 rounded-xl shrink-0 transition-colors ${showDateInput ? 'bg-primary/15 text-primary' : 'bg-accent text-accent-foreground hover:bg-accent/80'}`}
+                title="Add date, repeat, priority and tags"
+                aria-label="More options"
+              >
+                <CalendarIcon />
+              </button>
+              <button type="submit" disabled={submitting} className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-xl shrink-0 disabled:opacity-50 font-bold transition-colors" aria-label="Add task">
+                +
+              </button>
+            </div>
           </div>
+          {showDateInput && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
+                className="px-3 py-2 rounded-lg bg-accent text-foreground sm:w-40" aria-label="Due date" />
+              <select value={recurrence} onChange={(e) => setRecurrence(e.target.value)}
+                className="px-3 py-2 rounded-lg bg-accent text-foreground cursor-pointer" aria-label="Repeat">
+                <option value="none">Once</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+              <select value={priority} onChange={(e) => setPriority(e.target.value)}
+                className="px-3 py-2 rounded-lg bg-accent text-foreground capitalize cursor-pointer" aria-label="Priority">
+                <option value="none">No priority</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+              <input type="text" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)}
+                placeholder="tags, comma separated" aria-label="Tags"
+                className="px-3 py-2 rounded-lg bg-accent text-foreground placeholder:text-muted-foreground flex-1 min-w-[10rem]" />
+            </div>
+          )}
         </form>
       )}
 
