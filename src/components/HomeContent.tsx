@@ -34,7 +34,7 @@ export default function HomeContent() {
   const [nameEdit, setNameEdit] = useState('');
   const [showModalDelete, setShowModalDelete] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'board' | 'calendar'>('list');
 
   const loadProjects = useCallback(async () => {
     try {
