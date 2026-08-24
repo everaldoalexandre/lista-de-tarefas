@@ -51,3 +51,21 @@ export const projectUpdateSchema = z.object({
   pinned: z.boolean().optional(),
   type: z.enum(['general', 'study', 'work', 'personal']).optional(),
 });
+
+export const noteCreateSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  content: z.string().trim().max(10000).optional(),
+  taskId: z.string().uuid().nullish(),
+  projectId: z.string().uuid().nullish(),
+});
+
+export const noteUpdateSchema = z
+  .object({
+    id: z.string(),
+    title: z.string().trim().min(1).max(120).optional(),
+    content: z.string().trim().max(10000).nullish(),
+    pinned: z.boolean().optional(),
+    taskId: z.string().uuid().nullish(),
+    projectId: z.string().uuid().nullish(),
+  })
+  .refine((v) => Object.keys(v).length > 1, { message: 'No fields to update' });

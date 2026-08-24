@@ -29,3 +29,17 @@ export type Task = {
   userId: string;
   subtasks?: SubTask[];
 };
+
+export type Note = {
+  id: string;
+  title: string;
+  content: string;
+  pinned?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  taskId: string | null;
+  projectId: string | null;
+  task?: { id: string; description: string } | null;
+  project?: { id: string; name: string } | null;
+};

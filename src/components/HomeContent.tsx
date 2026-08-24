@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Trash2, BarChart3 } from 'lucide-react';
+import { Trash2, BarChart3, StickyNote } from 'lucide-react';
 import Logout from './Logout';
 import CurrentDate from './CurrentData';
 import Projects from './Projects';
@@ -182,16 +182,24 @@ export default function HomeContent() {
         </button>
         <CurrentDate />
         <div className="flex items-center gap-1">
-          <Link
-            href="/habits"
-            className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-accent transition-colors"
-            title="Habits"
-            aria-label="Habits"
-          >
-            <FlameIcon />
-          </Link>
-          <ThemeToggle />
-          <Logout />
+            <Link
+              href="/habits"
+              className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-accent transition-colors"
+              title="Habits"
+              aria-label="Habits"
+            >
+              <FlameIcon />
+            </Link>
+            <Link
+              href="/notes"
+              className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-accent transition-colors"
+              title="Notes"
+              aria-label="Notes"
+            >
+              <StickyNote className="size-5" />
+            </Link>
+            <ThemeToggle />
+            <Logout />
         </div>
       </header>
 
@@ -277,6 +285,14 @@ export default function HomeContent() {
               aria-label="Habits"
             >
               <FlameIcon />
+            </Link>
+            <Link
+              href="/notes"
+              className="text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-accent transition-colors"
+              title="Notes"
+              aria-label="Notes"
+            >
+              <StickyNote className="size-5" />
             </Link>
             <Link
               href="/review"
