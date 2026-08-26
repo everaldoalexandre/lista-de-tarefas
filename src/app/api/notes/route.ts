@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma, isPrismaError } from "@/lib/prisma";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
+import { isCrossSite, crossSiteResponse } from "@/lib/http-guard";
 import { noteCreateSchema, noteUpdateSchema } from "@/lib/validation";
 import { headers } from "next/headers";
 import { NextResponse } from 'next/server';
@@ -75,6 +76,10 @@ export async function POST(request: Request) {
 
     if (!rateLimit(clientKey(request, "notes:create"))) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
+    if (isCrossSite(request)) {
+      return crossSiteResponse();
     }
 
     const parsed = noteCreateSchema.safeParse(await request.json());
@@ -155,6 +160,10 @@ export async function PUT(request: Request) {
 
     if (!rateLimit(clientKey(request, "notes:update"))) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
+    if (isCrossSite(request)) {
+      return crossSiteResponse();
     }
 
     const body = await request.json();
@@ -269,6 +278,10 @@ export async function DELETE(request: Request) {
 
     if (!rateLimit(clientKey(request, "notes:delete"))) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
+    if (isCrossSite(request)) {
+      return crossSiteResponse();
     }
 
     if (purge === true) {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { localDayKey, userDayKey } from '@/lib/date-utils';
 
 type Task = { id: string; description: string; status: string; date: string | null; priority?: string | null; tags?: string[] };
 type Habit = { id: string; name: string; doneDates: string[] };
@@ -27,15 +28,19 @@ export default function ReviewPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const tz = new Date().getTimezoneOffset();
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
-    return d.toISOString().slice(0, 10);
+    return localDayKey(d);
   });
 
   function completedOn(day: string) {
     return tasks.filter(
-      (t) => t.status === 'done' && (t as unknown as { updatedAt?: string }).updatedAt?.slice(0, 10) === day
+      (t) =>
+        t.status === 'done' &&
+        (t as unknown as { updatedAt?: string }).updatedAt !== undefined &&
+        userDayKey(tz, new Date((t as unknown as { updatedAt: string }).updatedAt)) === day
     ).length;
   }
 

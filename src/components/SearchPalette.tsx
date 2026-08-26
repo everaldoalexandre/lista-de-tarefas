@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Search, CornerDownLeft } from 'lucide-react';
+import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import type { Project } from '@/type/type';
 
@@ -60,6 +61,10 @@ export default function SearchPalette({
   }, [query, tasks, projects]);
 
   function goProject(id: string | null) {
+    if (!id) {
+      toast.info('This task has no project.');
+      return;
+    }
     onOpenChange(false);
     router.push('/app');
     window.setTimeout(

@@ -60,13 +60,18 @@ export default function SettingsContent() {
         content = JSON.stringify({ exportedAt: new Date().toISOString(), projects, tasks }, null, 2);
         filename = 'tasks-export.json';
       } else {
+        // prefixo ' neutraliza formula injection (=, +, -, @) em Excel/Sheets
+        const cell = (value: string) => {
+          const escaped = `"${value.replace(/"/g, '""')}"`;
+          return /^[=+\-@\t\r]/.test(escaped.replace(/^"/, '')) ? `'${escaped}` : escaped;
+        };
         const header = 'description,status,date,project';
         const rows = tasks.map((t: { description: string; status: string; date: string | null; project?: { name?: string } | null }) =>
           [
-            `"${t.description.replace(/"/g, '""')}"`,
+            cell(t.description),
             t.status,
             t.date ? new Date(t.date).toISOString().slice(0, 10) : '',
-            `"${t.project?.name ?? ''}"`,
+            cell(t.project?.name ?? ''),
           ].join(',')
         );
         content = [header, ...rows].join('\n');

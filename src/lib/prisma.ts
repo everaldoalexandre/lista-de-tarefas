@@ -1,4 +1,4 @@
-import { PrismaClient } from '@/generated/prisma'
+import { Prisma, PrismaClient } from '@/generated/prisma'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -14,14 +14,8 @@ if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma
 }
 
-export function isPrismaError(error: unknown): error is { code: string; message: string } {
-  return (
-    error !== null &&
-    typeof error === 'object' &&
-    'code' in error &&
-    typeof (error as { code: unknown }).code === 'string' &&
-    'message' in error
-  )
+export function isPrismaError(error: unknown): error is Prisma.PrismaClientKnownRequestError {
+  return error instanceof Prisma.PrismaClientKnownRequestError
 }
 
 export default prisma

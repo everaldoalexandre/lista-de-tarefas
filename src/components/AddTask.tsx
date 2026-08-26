@@ -91,6 +91,7 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
 
   async function handleOnDragEnd(result: DropResult) {
     if (!result.destination || readOnly) return;
+    if (filterPriority || filterTag) return;
 
     const sourceColumn = result.source.droppableId;
     const destColumn = result.destination.droppableId;
@@ -225,15 +226,9 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
           label: 'Undo',
           onClick: () => {
             fetch('/api/tasks', {
-              method: 'POST',
+              method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                newTask: {
-                  description: deleted.description,
-                  date: deleted.date ? deleted.date.toISOString() : undefined,
-                  projectId: deleted.projectId,
-                },
-              }),
+              body: JSON.stringify({ id: deleted.id, restore: true }),
             })
               .then(async (r) => {
                 if (!r.ok) throw new Error('undo failed');
@@ -256,7 +251,8 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
 
   async function toloadTask() {
     try {
-      const response = await fetch(`/api/tasks?${query}`);
+      const tz = new Date().getTimezoneOffset();
+      const response = await fetch(`/api/tasks?${query}${query ? '&' : ''}tz=${tz}`);
 
       if (response.ok) {
         const data: { list: { id: string, description: string; date: string | null; status: string; order: number; projectId: string | null; userId: string; recurrence?: string | null; priority?: string | null; tags?: string[]; pinned?: boolean }[] } = await response.json();
@@ -496,7 +492,7 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
     );
   }
 
-  const doneGridClass = 'grid grid-cols-[30px_1fr_auto] items-center gap-2 p-2 rounded-lg bg-muted text-muted-foreground line-through';
+  const filtersActive = !!filterPriority || !!filterTag;
   const todoGridClass = 'grid grid-cols-[30px_1fr_auto] items-center gap-2 p-2 rounded-lg bg-card border border-border shadow-sm hover:shadow transition-shadow text-card-foreground';
 
   if (view === 'calendar') {
@@ -598,7 +594,7 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
                   {(dropProvided) => (
                     <ul {...dropProvided.droppableProps} ref={dropProvided.innerRef} className="flex flex-col gap-2 min-h-[80px]">
                       {sortPinned(list.filter((t) => normalizeStatus(t.status) === col.key)).map((newTask, index) => (
-                        <Draggable key={newTask.id} draggableId={newTask.id} index={index}>
+                        <Draggable key={newTask.id} draggableId={newTask.id} index={index} isDragDisabled={filtersActive}>
                           {(dragProvided) => (
                             <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} {...dragProvided.dragHandleProps}
                               className="flex flex-col gap-1 p-3 rounded-xl bg-card border border-border shadow-sm hover:shadow transition-shadow text-card-foreground">
@@ -787,7 +783,7 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
           {(dropProvided) => (
             <ul {...dropProvided.droppableProps} ref={dropProvided.innerRef} className="flex flex-col gap-2 w-full">
               {pendingTasks.map((newTask, index) => (
-                <Draggable key={newTask.id} draggableId={newTask.id} index={index} isDragDisabled={readOnly}>
+                <Draggable key={newTask.id} draggableId={newTask.id} index={index} isDragDisabled={readOnly || filtersActive}>
                   {(dragProvided) => (
                     <li ref={dragProvided.innerRef} {...dragProvided.draggableProps} {...dragProvided.dragHandleProps}
                       className={todoGridClass}>
@@ -812,41 +808,47 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
 
       {completed.length > 0 && (
         <div className="w-full">
-          <CompletedSection show={true} count={completed.length} tasks={completed} />
+          <CompletedSection
+            count={completed.length}
+            tasks={completed}
+            readOnly={readOnly}
+            onToggleTask={tomarkTask}
+            renderActions={rowActions}
+          />
         </div>
       )}
 
       {taskDialogs()}
     </div>
   );
+}
 
-  function CompletedSection({ show, count, tasks }: { show: boolean; count: number; tasks: Task[] }) {
-    const [open, setOpen] = useState(false);
+function CompletedSection({ count, tasks, readOnly, onToggleTask, renderActions }: { count: number; tasks: Task[]; readOnly?: boolean; onToggleTask: (task: Task) => void; renderActions: (task: Task) => React.ReactNode }) {
+  const [open, setOpen] = useState(false);
 
-    return (
-      <>
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-card border border-border shadow-sm text-foreground font-bold hover:bg-accent transition-colors"
-        >
-          <span>Completed ({count})</span>
-          <span>{open ? '−' : '+'}</span>
-        </button>
-        {open && show && (
-          <ul className="flex flex-col gap-2 mt-2">
-            {tasks.map((newTask) => (
-              <li key={newTask.id} className={`grid grid-cols-[30px_1fr_auto] items-center gap-2 p-2 rounded-lg bg-muted text-muted-foreground line-through`}>
-                <input type="checkbox" className="w-5 h-5 accent-foreground cursor-pointer" checked={true} disabled={readOnly}
-                  aria-label="Mark task as pending"
-                  onChange={() => tomarkTask(newTask)} />
-                <span className="break-all">{newTask.description}</span>
-                {rowActions(newTask)}
-              </li>
-            ))}
-          </ul>
-        )}
-      </>
-    );
-  }
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-card border border-border shadow-sm text-foreground font-bold hover:bg-accent transition-colors"
+      >
+        <span>Completed ({count})</span>
+        <span>{open ? '−' : '+'}</span>
+      </button>
+      {open && (
+        <ul className="flex flex-col gap-2 mt-2">
+          {tasks.map((newTask) => (
+            <li key={newTask.id} className={`grid grid-cols-[30px_1fr_auto] items-center gap-2 p-2 rounded-lg bg-muted text-muted-foreground line-through`}>
+              <input type="checkbox" className="w-5 h-5 accent-foreground cursor-pointer" checked={true} disabled={readOnly}
+                aria-label="Mark task as pending"
+                onChange={() => onToggleTask(newTask)} />
+              <span className="break-all">{newTask.description}</span>
+              {renderActions(newTask)}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
 }

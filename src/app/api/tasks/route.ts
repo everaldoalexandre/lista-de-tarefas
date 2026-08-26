@@ -7,6 +7,8 @@ import {
   taskUpdateSchema,
 } from "@/lib/validation";
 import { nextOccurrence, type Recurrence } from "@/lib/task-utils";
+import { parseTzParam, userEndOfDay, userEndOfWeek } from "@/lib/date-utils";
+import { isCrossSite, crossSiteResponse } from "@/lib/http-guard";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -60,15 +62,16 @@ export async function GET(request: Request) {
     const range = searchParams.get("range");
     const all = searchParams.get("all") === "1";
     const trash = searchParams.get("trash") === "1";
+    const tz = parseTzParam(searchParams.get("tz"));
 
     const where = {
       userId: session.user.id,
       deletedAt: trash ? { not: null } : null,
       ...(all ? {} : { projectId: projectId || null }),
       ...(range === "today"
-        ? { status: "pending", date: { lte: endOfToday() } }
+        ? { status: "pending", date: { lte: tz !== null ? userEndOfDay(tz) : endOfToday() } }
         : {}),
-      ...(range === "week" ? { status: "pending", date: { lte: endOfWeek() } } : {}),
+      ...(range === "week" ? { status: "pending", date: { lte: tz !== null ? userEndOfWeek(tz) : endOfWeek() } } : {}),
     };
 
     const list = await prisma.list.findMany({
@@ -118,6 +121,10 @@ export async function POST(request: Request) {
 
     if (limited(request, "tasks:create")) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
+    if (isCrossSite(request)) {
+      return crossSiteResponse();
     }
 
     const parsed = taskCreateSchema.safeParse(await request.json());
@@ -201,6 +208,10 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
+    if (isCrossSite(request)) {
+      return crossSiteResponse();
+    }
+
     const body = await request.json();
     const { id } = body;
 
@@ -247,6 +258,10 @@ export async function PUT(request: Request) {
 
     if (limited(request, "tasks:update")) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
+    if (isCrossSite(request)) {
+      return crossSiteResponse();
     }
 
     const body = await request.json();

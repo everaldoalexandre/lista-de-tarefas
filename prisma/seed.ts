@@ -1,23 +1,27 @@
 import { auth } from "@/lib/auth"
 
-const userData = [
-	{
-		email: "super1@admin.com",
-		name: "Super Admin",
-		password: "teste123",
-	}
-]
+async function main() {
+	const email = process.env.SEED_EMAIL
+	const name = process.env.SEED_NAME ?? "Admin"
+	const password = process.env.SEED_PASSWORD
 
-export async function main() {
-	for (const user of userData) {
-		await auth.api.signUpEmail({
-			body: {
-				email: user.email,
-				name: user.name,
-				password: user.password
-			}
-		})
+	if (!email || !password) {
+		console.error("Defina SEED_EMAIL e SEED_PASSWORD no ambiente antes de rodar o seed.")
+		return
 	}
+
+	if (password.length < 12) {
+		console.error("SEED_PASSWORD deve ter pelo menos 12 caracteres.")
+		return
+	}
+
+	await auth.api.signUpEmail({
+		body: {
+			email,
+			name,
+			password,
+		}
+	})
 }
 
 main()

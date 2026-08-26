@@ -20,6 +20,7 @@ export default function Projects({ projects, reloadProjects, loading, smartList,
   const [template, setTemplate] = useState('blank');
   const [projectType, setProjectType] = useState<ProjectTypeKey>('general');
   const [showModalAdd, setShowModalAdd] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   const TEMPLATE_TYPE: Record<string, ProjectTypeKey> = {
@@ -47,11 +48,13 @@ export default function Projects({ projects, reloadProjects, loading, smartList,
   }
 
   async function createProject() {
+    if (creating) return;
     if (!name.trim()) {
       toast.error("Please fill in the project name.");
       return;
     }
 
+    setCreating(true);
     try {
       const response = await fetch('/api/projects', {
         method: 'POST',
@@ -80,6 +83,8 @@ export default function Projects({ projects, reloadProjects, loading, smartList,
     } catch (error) {
       console.error('Request error:', error);
       toast.error('Connection error. Please try again.');
+    } finally {
+      setCreating(false);
     }
   }
 
@@ -232,7 +237,7 @@ export default function Projects({ projects, reloadProjects, loading, smartList,
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Project name"
-            onKeyDown={(e) => e.key === 'Enter' && createProject()}
+            onKeyDown={(e) => e.key === 'Enter' && !creating && createProject()}
             className="w-full text-foreground p-2 rounded-lg mb-3 border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring"
           />
 
@@ -279,10 +284,11 @@ export default function Projects({ projects, reloadProjects, loading, smartList,
               Cancel
             </button>
             <button
-              className="px-4 py-2 rounded-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              className="px-4 py-2 rounded-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
               onClick={createProject}
+              disabled={creating}
             >
-              Create
+              {creating ? 'Creating...' : 'Create'}
             </button>
           </div>
         </DialogContent>

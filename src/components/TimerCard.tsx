@@ -3,40 +3,41 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pause, Play, RotateCcw, TimerIcon2 } from './Lucide';
 import { toast } from 'sonner';
+import { localDayKey } from '@/lib/date-utils';
 
 export default function TimerCard({ projectId }: { projectId: string }) {
   const FOCUS_SECONDS = 25 * 60;
   const [secondsLeft, setSecondsLeft] = useState(FOCUS_SECONDS);
   const [running, setRunning] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const endAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!running) return;
-    intervalRef.current = setInterval(() => {
-      setSecondsLeft((s) => s - 1);
-    }, 1000);
+    endAtRef.current = Date.now() + secondsLeft * 1000;
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.round(((endAtRef.current ?? 0) - Date.now()) / 1000));
+      if (remaining > 0) {
+        setSecondsLeft(remaining);
+        return;
+      }
+      clearInterval(interval);
+      setRunning(false);
+      setSecondsLeft(FOCUS_SECONDS);
+      logMinutes(25);
+      toast.success('Focus session complete! 25 minutes logged.');
+    }, 250);
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      clearInterval(interval);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- secondsLeft lido apenas ao (re)iniciar o ciclo
   }, [running]);
-
-  useEffect(() => {
-    if (secondsLeft > 0 || !running) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- fim do ciclo do timer
-    setRunning(false);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    logMinutes(25);
-    setSecondsLeft(FOCUS_SECONDS);
-    toast.success('Focus session complete! 25 minutes logged.');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [secondsLeft, running]);
 
   async function logMinutes(minutes: number) {
     try {
       await fetch('/api/timer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ minutes, projectId }),
+        body: JSON.stringify({ minutes, projectId, date: localDayKey() }),
       });
       window.dispatchEvent(new CustomEvent('time-logged'));
     } catch {
@@ -46,7 +47,6 @@ export default function TimerCard({ projectId }: { projectId: string }) {
 
   function stopAndLog() {
     setRunning(false);
-    if (intervalRef.current) clearInterval(intervalRef.current);
     const elapsedMinutes = Math.floor((FOCUS_SECONDS - secondsLeft) / 60);
     if (elapsedMinutes >= 1) {
       logMinutes(elapsedMinutes);

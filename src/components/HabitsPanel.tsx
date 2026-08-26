@@ -28,10 +28,34 @@ type Stats = {
   achievements: { key: string; label: string; description: string; earned: boolean }[];
 };
 
+function formatDateKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function dayKey(offset = 0) {
   const d = new Date();
   d.setDate(d.getDate() + offset);
-  return d.toISOString().slice(0, 10);
+  return formatDateKey(d);
+}
+
+function computeStreak(doneDates: Set<string>) {
+  let streak = 0;
+  let misses = 0;
+  const cursor = new Date();
+  if (!doneDates.has(dayKey(0))) {
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  for (let i = 0; i < 400; i++) {
+    if (doneDates.has(formatDateKey(cursor))) {
+      streak++;
+      misses = 0;
+    } else {
+      misses++;
+      if (misses >= 2) break;
+    }
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
 }
 
 export default function HabitsPanel() {
@@ -220,11 +244,12 @@ export default function HabitsPanel() {
           <ul className="flex flex-col gap-3">
             {habits.map((habit) => {
               const doneToday = habit.doneDates.includes(dayKey());
+              const streak = computeStreak(new Set(habit.doneDates));
               return (
                 <li key={habit.id} className="flex flex-wrap items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
-                  <span className={`flex items-center gap-1 font-bold ${habit.streak > 0 ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                  <span className={`flex items-center gap-1 font-bold ${streak > 0 ? 'text-amber-500' : 'text-muted-foreground'}`}>
                     <Flame className="size-5" />
-                    {habit.streak}
+                    {streak}
                   </span>
                   <span className="font-semibold text-foreground flex-1 min-w-[120px]">{habit.name}</span>
 

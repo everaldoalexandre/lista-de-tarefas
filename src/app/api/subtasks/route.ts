@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
+import { isCrossSite, crossSiteResponse } from "@/lib/http-guard";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -16,6 +17,10 @@ export async function POST(request: Request) {
     }
     if (!rateLimit(clientKey(request, "subtasks:create"))) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
+    if (isCrossSite(request)) {
+      return crossSiteResponse();
     }
 
     const body = await request.json();
@@ -57,6 +62,14 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "ID is mandatory" }, { status: 400 });
     }
 
+    if (!rateLimit(clientKey(request, "subtasks:update"))) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
+    if (isCrossSite(request)) {
+      return crossSiteResponse();
+    }
+
     const subtask = await prisma.subTask.findFirst({
       where: { id, task: { userId: session.user.id } },
     });
@@ -92,6 +105,14 @@ export async function DELETE(request: Request) {
     const { id } = await request.json();
     if (!id) {
       return NextResponse.json({ error: "ID is mandatory" }, { status: 400 });
+    }
+
+    if (!rateLimit(clientKey(request, "subtasks:delete"))) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
+    if (isCrossSite(request)) {
+      return crossSiteResponse();
     }
 
     const deleted = await prisma.subTask.deleteMany({

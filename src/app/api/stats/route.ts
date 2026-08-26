@@ -21,6 +21,16 @@ function computeBestStreak(dates: string[]) {
   return best;
 }
 
+function computeBestStreakAcrossHabits(habits: { logs: { date: Date }[] }[]) {
+  // melhor streak individual por hábito (não união de datas de hábitos distintos)
+  let best = 0;
+  for (const habit of habits) {
+    const streak = computeBestStreak(habit.logs.map((l) => l.date.toISOString().slice(0, 10)));
+    best = Math.max(best, streak);
+  }
+  return best;
+}
+
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
 
@@ -50,8 +60,7 @@ export async function GET() {
   const nextLevelXp = Math.pow(level * 10, 2);
   const currentLevelXp = Math.pow((level - 1) * 10, 2);
 
-  const allHabitDates = habits.flatMap((h) => h.logs.map((l) => l.date.toISOString().slice(0, 10)));
-  const bestStreak = computeBestStreak(allHabitDates);
+  const bestStreak = computeBestStreakAcrossHabits(habits);
 
   const achievements = [
     { key: "first-steps", label: "First Steps", description: "Complete your first task", earned: doneTasks >= 1 },

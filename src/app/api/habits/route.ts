@@ -1,30 +1,9 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
+import { isCrossSite, crossSiteResponse } from "@/lib/http-guard";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-
-function dayKey(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function computeStreak(dates: Set<string>) {
-  let streak = 0;
-  let misses = 0;
-  const cursor = new Date();
-  if (!dates.has(dayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
-  for (let i = 0; i < 400; i++) {
-    if (dates.has(dayKey(cursor))) {
-      streak++;
-      misses = 0;
-    } else {
-      misses++;
-      if (misses >= 2) break;
-    }
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  return streak;
-}
 
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -48,10 +27,10 @@ export async function GET() {
   });
 
   return NextResponse.json({
-    habits: habits.map(({ logs, ...habit }) => {
-      const doneDates = new Set(logs.map((l) => dayKey(l.date)));
-      return { ...habit, doneDates: Array.from(doneDates), streak: computeStreak(doneDates) };
-    }),
+    habits: habits.map(({ logs, ...habit }) => ({
+      ...habit,
+      doneDates: Array.from(new Set(logs.map((l) => l.date.toISOString().slice(0, 10)))),
+    })),
   });
 }
 
@@ -65,6 +44,10 @@ export async function POST(request: Request) {
 
     if (!rateLimit(clientKey(request, "habits:create"))) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
+    if (isCrossSite(request)) {
+      return crossSiteResponse();
     }
 
     const body = await request.json();
@@ -95,6 +78,10 @@ export async function PUT(request: Request) {
 
     if (!rateLimit(clientKey(request, "habits:toggle"))) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
+    if (isCrossSite(request)) {
+      return crossSiteResponse();
     }
 
     const { id, date } = await request.json();
@@ -148,6 +135,14 @@ export async function DELETE(request: Request) {
 
     if (!id) {
       return NextResponse.json({ error: "ID is mandatory" }, { status: 400 });
+    }
+
+    if (!rateLimit(clientKey(request, "habits:delete"))) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
+    if (isCrossSite(request)) {
+      return crossSiteResponse();
     }
 
     const deleted = await prisma.habit.deleteMany({

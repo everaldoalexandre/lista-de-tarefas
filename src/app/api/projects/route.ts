@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma, isPrismaError } from "@/lib/prisma";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
+import { isCrossSite, crossSiteResponse } from "@/lib/http-guard";
 import { projectCreateSchema, projectUpdateSchema } from "@/lib/validation";
 import { headers } from "next/headers";
 import { NextResponse } from 'next/server';
@@ -69,6 +70,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
+    if (isCrossSite(request)) {
+      return crossSiteResponse();
+    }
+
     const parsed = projectCreateSchema.safeParse(await request.json());
 
     if (!parsed.success) {
@@ -123,7 +128,30 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
-    const parsed = projectUpdateSchema.safeParse(await request.json());
+    if (isCrossSite(request)) {
+      return crossSiteResponse();
+    }
+
+    const body = await request.json();
+
+    if (!body?.id) {
+      return NextResponse.json({ error: 'ID is mandatory' }, { status: 400 });
+    }
+
+    if (body.restore === true) {
+      const restored = await prisma.project.updateMany({
+        where: { id: String(body.id), userId: session.user.id, deletedAt: { not: null } },
+        data: { deletedAt: null },
+      });
+
+      if (restored.count === 0) {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+      }
+
+      return NextResponse.json({ message: 'Project restored' });
+    }
+
+    const parsed = projectUpdateSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json({ error: 'ID is mandatory' }, { status: 400 });
@@ -140,14 +168,6 @@ export async function PUT(request: Request) {
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
-    }
-
-    if ((parsed.data as { restore?: boolean }).restore === true) {
-      await prisma.project.update({
-        where: { id: project.id },
-        data: { deletedAt: null }
-      });
-      return NextResponse.json({ message: 'Project restored' });
     }
 
     if (!name && pinned === undefined && type === undefined) {
@@ -198,6 +218,14 @@ export async function DELETE(request: Request) {
 
     if (!id) {
       return NextResponse.json({ error: 'ID is mandatory' }, { status: 400 });
+    }
+
+    if (!rateLimit(clientKey(request, "projects:delete"))) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
+    if (isCrossSite(request)) {
+      return crossSiteResponse();
     }
 
     if (purge === true) {
