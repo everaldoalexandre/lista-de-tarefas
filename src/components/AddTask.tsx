@@ -598,7 +598,7 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
                           {(dragProvided) => (
                             <div ref={dragProvided.innerRef} {...dragProvided.draggableProps} {...dragProvided.dragHandleProps}
                               className="flex flex-col gap-1 p-3 rounded-xl bg-card border border-border shadow-sm hover:shadow transition-shadow text-card-foreground">
-                              <span className="break-all text-sm font-medium">{newTask.pinned && '★ '}{newTask.description}</span>
+                              <span className="break-all whitespace-pre-wrap text-sm font-medium">{newTask.pinned && '★ '}{newTask.description}</span>
                               <span className="flex flex-wrap gap-1">{badges(newTask)}</span>
                               {rowActions(newTask)}
                             </div>
@@ -790,7 +790,7 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
                       <input type="checkbox" className="w-5 h-5 accent-foreground cursor-pointer" checked={false} disabled={readOnly}
                         aria-label="Mark task as completed"
                         onChange={() => tomarkTask(newTask)} />
-                      <span className="break-all flex flex-col gap-1">
+                      <span className="break-all whitespace-pre-wrap flex flex-col gap-1">
                         {newTask.pinned && <span className="text-amber-500 text-xs not-italic">★ pinned</span>}
                         {newTask.description}
                       </span>
@@ -843,7 +843,7 @@ function CompletedSection({ count, tasks, readOnly, onToggleTask, renderActions 
               <input type="checkbox" className="w-5 h-5 accent-foreground cursor-pointer" checked={true} disabled={readOnly}
                 aria-label="Mark task as pending"
                 onChange={() => onToggleTask(newTask)} />
-              <span className="break-all">{newTask.description}</span>
+              <span className="break-all whitespace-pre-wrap">{newTask.description}</span>
               {renderActions(newTask)}
             </li>
           ))}
