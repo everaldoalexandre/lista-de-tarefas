@@ -34,4 +34,21 @@ describe('parseTaskInput', () => {
     expect(result.priority).toBeUndefined();
     expect(result.tags).toEqual([]);
   });
+
+  it('preserves line breaks', () => {
+    const result = parseTaskInput('teste\n\nteste\n\ntesdas,\n\ndasdsad\n\n-dasadsa\n-dadsa');
+    expect(result.description).toBe('teste\n\nteste\n\ntesdas,\n\ndasdsad\n\n-dasadsa\n-dadsa');
+  });
+
+  it('keeps multiline structure when removing markers', () => {
+    const result = parseTaskInput('Buy milk\ntomorrow\nCall mom #home');
+    expect(result.description).toBe('Buy milk\n\nCall mom');
+    expect(result.date).toBeDefined();
+    expect(result.tags).toEqual(['home']);
+  });
+
+  it('collapses horizontal whitespace and caps blank lines', () => {
+    const result = parseTaskInput('Buy   milk\t\tand eggs\n\n\n\nCall mom');
+    expect(result.description).toBe('Buy milk and eggs\n\nCall mom');
+  });
 });

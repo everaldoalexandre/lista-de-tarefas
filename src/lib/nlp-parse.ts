@@ -78,7 +78,10 @@ export function parseTaskInput(raw: string): ParsedTask {
   });
 
   return {
-    description: text.replace(/\s+/g, ' ').trim(),
+    description: text
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim(),
     date,
     priority,
     tags,
