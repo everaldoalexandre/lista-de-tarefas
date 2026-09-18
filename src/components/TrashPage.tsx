@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, RotateCcw, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
 type DeletedTask = { id: string; description: string; deletedAt: string | null };
@@ -14,6 +15,8 @@ export default function TrashPage() {
   const [projects, setProjects] = useState<DeletedProject[]>([]);
   const [notes, setNotes] = useState<DeletedNote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showEmptyConfirm, setShowEmptyConfirm] = useState(false);
+  const [emptying, setEmptying] = useState(false);
 
   async function loadTrash() {
     try {
@@ -47,6 +50,50 @@ export default function TrashPage() {
     }
   }
 
+  const totalDeleted = tasks.length + projects.length + notes.length;
+
+  async function emptyTrash() {
+    if (emptying) return;
+    setEmptying(true);
+    try {
+      const purges: Promise<Response>[] = [
+        ...projects.map((p) =>
+          fetch('/api/projects', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: p.id, purge: true }),
+          })
+        ),
+        ...tasks.map((t) =>
+          fetch('/api/tasks', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: t.id, purge: true }),
+          })
+        ),
+        ...notes.map((n) =>
+          fetch('/api/notes', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: n.id, purge: true }),
+          })
+        ),
+      ];
+      const results = await Promise.all(purges);
+      if (results.every((r) => r.ok)) {
+        toast.success('Trash emptied!');
+      } else {
+        toast.error('Some items could not be deleted.');
+      }
+      setShowEmptyConfirm(false);
+      await loadTrash();
+    } catch {
+      toast.error('Connection error. Please try again.');
+    } finally {
+      setEmptying(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background font-sans">
       <header className="border-b border-border bg-card">
@@ -61,6 +108,18 @@ export default function TrashPage() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8 flex flex-col gap-6">
+        {!loading && totalDeleted > 0 && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setShowEmptyConfirm(true)}
+              className="flex items-center gap-1.5 rounded-lg border border-destructive/40 px-3 py-1.5 text-sm font-semibold text-destructive hover:bg-destructive/10 transition-colors"
+            >
+              <Trash2 className="size-4" />
+              Empty trash ({totalDeleted})
+            </button>
+          </div>
+        )}
         <section>
           <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground mb-3">Deleted projects</h2>
           {loading ? (
@@ -139,6 +198,30 @@ export default function TrashPage() {
           )}
         </section>
       </main>
+
+      <Dialog open={showEmptyConfirm} onOpenChange={setShowEmptyConfirm}>
+        <DialogContent className="max-w-md">
+          <h2 className="text-lg text-foreground font-bold mb-2">Empty trash?</h2>
+          <p className="text-muted-foreground">
+            This will permanently delete {totalDeleted} item{totalDeleted === 1 ? '' : 's'}. This action cannot be undone.
+          </p>
+          <div className="mt-2 flex justify-end gap-3">
+            <button
+              className="px-4 py-2 rounded-lg font-medium text-foreground bg-accent hover:bg-accent/80 transition-colors"
+              onClick={() => setShowEmptyConfirm(false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-4 py-2 rounded-lg font-semibold bg-destructive text-white hover:bg-destructive/90 transition-colors disabled:opacity-50"
+              onClick={emptyTrash}
+              disabled={emptying}
+            >
+              {emptying ? 'Deleting...' : 'Delete forever'}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

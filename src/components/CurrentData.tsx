@@ -1,17 +1,16 @@
 export default function CurrentDate() {
-  const formatter = new Intl.DateTimeFormat('en-US', {
+  const parts = new Intl.DateTimeFormat('en-US', {
     weekday: 'long',
     day: '2-digit',
     month: 'long',
-  });
+  }).formatToParts(new Date());
 
-  const formatted = formatter.format(new Date());
+  const get = (type: string) =>
+    parts.find((part) => part.type === type)?.value ?? '';
 
-  const [weekdayRaw, monthRaw, dayRaw] = formatted.replace(',', '').split(' ');
-
-  const weekday = weekdayRaw.charAt(0).toUpperCase() + weekdayRaw.slice(1);
-  const month = monthRaw.charAt(0).toUpperCase() + monthRaw.slice(1);
-  const day = dayRaw;
+  const weekday = get('weekday');
+  const month = get('month');
+  const day = get('day');
 
   return (
     <h1 suppressHydrationWarning className="text-lg font-bold text-foreground">

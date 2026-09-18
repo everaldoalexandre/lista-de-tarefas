@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, CornerDownLeft } from 'lucide-react';
+import { Search, CornerDownLeft, StickyNote } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import type { Project } from '@/type/type';
@@ -13,6 +13,12 @@ type SearchableTask = {
   status: string;
   projectId: string | null;
   project?: { id: string; name: string } | null;
+};
+
+type SearchableNote = {
+  id: string;
+  title: string;
+  content: string;
 };
 
 export default function SearchPalette({
@@ -26,6 +32,7 @@ export default function SearchPalette({
 }) {
   const [query, setQuery] = useState('');
   const [tasks, setTasks] = useState<SearchableTask[]>([]);
+  const [notes, setNotes] = useState<SearchableNote[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -47,6 +54,10 @@ export default function SearchPalette({
       .then((r) => (r.ok ? r.json() : { list: [] }))
       .then((data: { list: SearchableTask[] }) => setTasks(data.list))
       .catch(() => setTasks([]));
+    fetch('/api/notes')
+      .then((r) => (r.ok ? r.json() : { notes: [] }))
+      .then((data: { notes: SearchableNote[] }) => setNotes(data.notes))
+      .catch(() => setNotes([]));
   }, [open]);
 
   const results = useMemo(() => {
@@ -57,8 +68,18 @@ export default function SearchPalette({
     const projectHits = q
       ? projects.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 4)
       : projects.slice(0, 4);
-    return { taskHits, projectHits };
-  }, [query, tasks, projects]);
+    const noteHits = q
+      ? notes
+          .filter((n) => n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q))
+          .slice(0, 4)
+      : [];
+    return { taskHits, projectHits, noteHits };
+  }, [query, tasks, projects, notes]);
+
+  function goNotes() {
+    onOpenChange(false);
+    router.push('/notes');
+  }
 
   function goProject(id: string | null) {
     if (!id) {
@@ -121,7 +142,21 @@ export default function SearchPalette({
               )}
             </button>
           ))}
-          {query && results.taskHits.length === 0 && results.projectHits.length === 0 && (
+          {results.noteHits.length > 0 && (
+            <p className="mt-2 px-2 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Notes</p>
+          )}
+          {results.noteHits.map((n) => (
+            <button
+              key={`n-${n.id}`}
+              type="button"
+              onClick={goNotes}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm text-foreground hover:bg-accent transition-colors"
+            >
+              <StickyNote className="size-3.5 shrink-0 text-muted-foreground" />
+              <span className="truncate">{n.title}</span>
+            </button>
+          ))}
+          {query && results.taskHits.length === 0 && results.projectHits.length === 0 && results.noteHits.length === 0 && (
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">No results found.</p>
           )}
         </div>

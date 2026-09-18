@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { CalendarCheck, FolderKanban, GripVertical, CircleCheckBig } from 'lucide-react';
+import { CalendarCheck, CalendarDays, Flame, FolderKanban, GripVertical, CircleCheckBig, StickyNote, Timer } from 'lucide-react';
 import SiteNav from '@/components/SiteNav';
 import { Button } from '@/components/ui/button';
 
@@ -23,6 +23,26 @@ const features = [
     icon: CircleCheckBig,
     title: 'Completed archive',
     description: 'Finished tasks move to a collapsible section at the bottom, keeping your list clean.',
+  },
+  {
+    icon: Flame,
+    title: 'Habits',
+    description: 'Build daily routines with streaks, XP levels and achievements.',
+  },
+  {
+    icon: StickyNote,
+    title: 'Notes',
+    description: 'Capture ideas and link them to tasks or projects.',
+  },
+  {
+    icon: Timer,
+    title: 'Pomodoro timer',
+    description: 'Focus in 25-minute sessions and track your study hours.',
+  },
+  {
+    icon: CalendarDays,
+    title: 'Calendar view',
+    description: 'See your tasks laid out across the month at a glance.',
   },
 ];
 

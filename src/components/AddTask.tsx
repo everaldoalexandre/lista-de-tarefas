@@ -34,6 +34,11 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
   const [taskEdit, setTaskEdit] = useState<Task | null>(null);
   const [descriptionEdit, setDescriptionEdit] = useState('');
   const [dateEdit, setDateEdit] = useState('');
+  const [priorityEdit, setPriorityEdit] = useState('none');
+  const [recurrenceEdit, setRecurrenceEdit] = useState('none');
+  const [tagsEdit, setTagsEdit] = useState('');
+  const [projectEdit, setProjectEdit] = useState('');
+  const [editProjects, setEditProjects] = useState<{ id: string; name: string }[]>([]);
   const editDescriptionRef = useRef<HTMLTextAreaElement>(null);
   const [subtasks, setSubtasks] = useState<{ id: string; description: string; done: boolean }[]>([]);
   const [newSubtask, setNewSubtask] = useState('');
@@ -74,6 +79,10 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
           id: taskEdit.id,
           description: descriptionEdit.trim(),
           date: dateEdit ? new Date(`${dateEdit}T00:00:00`).toISOString() : null,
+          priority: priorityEdit === 'none' ? null : priorityEdit,
+          recurrence: recurrenceEdit,
+          tags: tagsEdit.split(',').map((t) => t.trim()).filter((t) => t.length >= 1 && t.length <= 24).slice(0, 10),
+          projectId: projectEdit || null,
         }),
       });
 
@@ -360,8 +369,16 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
     setTaskEdit(task);
     setDescriptionEdit(task.description);
     setDateEdit(task.date ? toDateInputValue(task.date) : '');
+    setPriorityEdit(task.priority ?? 'none');
+    setRecurrenceEdit(task.recurrence ?? 'none');
+    setTagsEdit((task.tags ?? []).join(', '));
+    setProjectEdit(task.projectId ?? '');
     setSubtasks(task.subtasks ?? []);
     setNewSubtask('');
+    fetch('/api/projects')
+      .then((r) => (r.ok ? r.json() : { projects: [] }))
+      .then((data: { projects: { id: string; name: string }[] }) => setEditProjects(data.projects ?? []))
+      .catch(() => setEditProjects([]));
   }
 
   async function addSubtask(e: React.FormEvent) {
@@ -675,6 +692,35 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
             />
           <input type="date" value={dateEdit} onChange={(e) => setDateEdit(e.target.value)}
             className="w-full text-foreground p-2 rounded-lg border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring" />
+          <div className="grid grid-cols-2 gap-2">
+            <select value={priorityEdit} onChange={(e) => setPriorityEdit(e.target.value)}
+              aria-label="Priority"
+              className="p-2 rounded-lg border border-border bg-transparent text-foreground capitalize outline-none focus:ring-2 focus:ring-ring cursor-pointer">
+              <option value="none">No priority</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+            <select value={recurrenceEdit} onChange={(e) => setRecurrenceEdit(e.target.value)}
+              aria-label="Repeat"
+              className="p-2 rounded-lg border border-border bg-transparent text-foreground outline-none focus:ring-2 focus:ring-ring cursor-pointer">
+              <option value="none">Once</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          <input type="text" value={tagsEdit} onChange={(e) => setTagsEdit(e.target.value)}
+            placeholder="tags, comma separated" aria-label="Tags"
+            className="w-full p-2 rounded-lg border border-border bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-ring" />
+          <select value={projectEdit} onChange={(e) => setProjectEdit(e.target.value)}
+            aria-label="Project"
+            className="w-full p-2 rounded-lg border border-border bg-transparent text-sm text-foreground outline-none focus:ring-2 focus:ring-ring cursor-pointer">
+            <option value="">No project</option>
+            {editProjects.map((project) => (
+              <option key={project.id} value={project.id}>{project.name}</option>
+            ))}
+          </select>
           <div className="flex flex-col gap-2">
             <span className="text-sm font-semibold text-muted-foreground">Checklist</span>
             {subtasks.map((st) => (

@@ -18,6 +18,9 @@ export const metadata: Metadata = {
   title: "Task Manager",
   description:
     "A simple and fast task manager. Create projects, add tasks with due dates, drag to prioritize and keep everything under control.",
+  icons: {
+    apple: "/icon-192.png",
+  },
 };
 
 export default function RootLayout({

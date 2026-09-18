@@ -16,14 +16,22 @@ Aplicativo de gerenciamento de tarefas com projetos, drag-and-drop, datas de ven
 ## Funcionalidades
 
 - Projetos com contador de pendentes e barra de progresso
-- Tarefas com data, recorrência (diária/semanal/mensal) e badges de atraso/hoje
-- Listas inteligentes "Today" e "Next 7 days"
-- Busca global com `Ctrl+K`
+- Tarefas com data, recorrência (diária/semanal/mensal), prioridade, tags e descrições multilinha
+- Edição completa da tarefa (descrição, data, prioridade, recorrência, tags, projeto, checklist)
+- Listas inteligentes "Today" e "Next 7 days" (respeitam o fuso horário local)
+- Visões lista, board (kanban) e calendário mensal
+- Busca global com `Ctrl+K` (tarefas, projetos e notas)
+- Notas com vínculo a tarefas/projetos, fixação e lixeira própria
+- Hábitos com streaks, XP, níveis e conquistas + weekly review
+- Pomodoro timer com registro de horas por projeto de estudo
+- Lixeira com restauração, exclusão definitiva e "esvaziar tudo"
 - Reordenar arrastando (@hello-pangea/dnd) com persistência transacional
 - Desfazer exclusão pelo toast
 - Exportar dados em JSON/CSV
-- PWA básico (manifest + ícone)
-- Rate limiting em memória nas rotas de escrita
+- Login com email/senha ou Google, troca de senha, tema dark/light
+- Projeto de boas-vindas criado automaticamente no cadastro
+- PWA básico (manifest + ícones)
+- Rate limiting + proteção anti-CSRF nas rotas de escrita
 
 ## Setup local
 
@@ -42,9 +50,17 @@ BETTER_AUTH_SECRET=...
 # opcionais
 TRUSTED_ORIGINS=https://seu-dominio.com
 BETTER_AUTH_URL=https://seu-dominio.com
+SEED_EMAIL=...            # seed inicial (`npx prisma db seed`)
+SEED_NAME=...
+SEED_PASSWORD=...         # 12+ caracteres
 GOOGLE_CLIENT_ID=...        # login social Google
 GOOGLE_CLIENT_SECRET=...
 ```
+
+Para o login com Google: crie um cliente OAuth em Google Cloud Console →
+APIs e serviços → Credenciais, e cadastre como URI de redirecionamento
+autorizado `https://seu-dominio.com/api/auth/callback/google`
+(`http://localhost:3000/api/auth/callback/google` no desenvolvimento).
 
 ## Scripts
 
