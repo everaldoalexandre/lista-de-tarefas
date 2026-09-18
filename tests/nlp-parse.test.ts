@@ -27,6 +27,28 @@ describe('parseTaskInput', () => {
     expect(new Date(`${result.date}T12:00:00`).getDay()).toBe(5);
   });
 
+  it('maps portuguese weekdays', () => {
+    const next = (target: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() + ((target - d.getDay() + 7) % 7 || 7));
+      return d.toISOString().slice(0, 10);
+    };
+    expect(parseTaskInput('reuniao sexta').date).toBe(next(5));
+    expect(parseTaskInput('reuniao sexta').description).toBe('reuniao');
+    expect(parseTaskInput('estudar segunda').date).toBe(next(1));
+    expect(parseTaskInput('prova terca').date).toBe(next(2));
+  });
+
+  it('consumes hyphenated -feira but keeps standalone feira', () => {
+    const friday = parseTaskInput('reuniao sexta-feira');
+    expect(friday.description).toBe('reuniao');
+    expect(friday.date).toBeDefined();
+
+    const market = parseTaskInput('vou a feira sexta');
+    expect(market.description).toBe('vou a feira');
+    expect(market.date).toBeDefined();
+  });
+
   it('keeps plain text untouched', () => {
     const result = parseTaskInput('Simple task with no markers');
     expect(result.description).toBe('Simple task with no markers');

@@ -6,23 +6,28 @@ export type ParsedTask = {
 };
 
 const WEEKDAYS: Record<string, number> = {
-  sunday: 0, sunday_pt: 0,
-  monday: 1, monday_pt: 1,
-  tuesday: 2, tuesday_pt: 2,
-  wednesday: 3, wednesday_pt: 3,
-  thursday: 4, thursday_pt: 4,
-  friday: 5, friday_pt: 5,
-  saturday: 6, saturday_pt: 6,
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
 };
 
-function nextWeekday(name: string) {
-  const target = WEEKDAYS[name];
-  if (target === undefined) return null;
-  const d = new Date();
-  const diff = (target - d.getDay() + 7) % 7 || 7;
-  d.setDate(d.getDate() + diff);
-  return d.toISOString().slice(0, 10);
-}
+// dias em portugues (com e sem acento); "-feira" hifenizado e consumido pelo
+// regex, mas "feira" separado nunca e removido ("vou a feira" nao e data)
+const WEEKDAYS_PT: Record<string, number> = {
+  domingo: 0,
+  segunda: 1,
+  terca: 2,
+  'terça': 2,
+  quarta: 3,
+  quinta: 4,
+  sexta: 5,
+  sabado: 6,
+  'sábado': 6,
+};
 
 export function parseTaskInput(raw: string): ParsedTask {
   let text = raw;
@@ -52,14 +57,16 @@ export function parseTaskInput(raw: string): ParsedTask {
 
   if (!date) {
     const weekdayMatch = text.match(
-      /\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday|domingo|segunda|ter[cç]a|quarta|quinta|sexta|s[aá]bado)\b/i
+      /\b(sunday|monday|tuesday|wednesday|thursday|friday|saturday|domingo|segunda|ter[cç]a|quarta|quinta|sexta|s[aá]bado)(?:-feira)?\b/i
     );
     if (weekdayMatch) {
       const normalized = weekdayMatch[1].toLowerCase();
-      const key = Object.keys(WEEKDAYS).find((k) => k === normalized || k === `${normalized}_pt`);
-      const resolved = nextWeekday(key ?? normalized);
-      if (resolved) {
-        date = resolved;
+      const target = WEEKDAYS[normalized] ?? WEEKDAYS_PT[normalized];
+      if (target !== undefined) {
+        const d = new Date();
+        const diff = (target - d.getDay() + 7) % 7 || 7;
+        d.setDate(d.getDate() + diff);
+        date = d.toISOString().slice(0, 10);
         text = text.replace(weekdayMatch[0], '');
       }
     }

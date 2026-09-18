@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { localDayKey, userDayKey } from '@/lib/date-utils';
+import { isOverdue } from '@/lib/task-utils';
 
 type Task = { id: string; description: string; status: string; date: string | null; priority?: string | null; tags?: string[] };
 type Habit = { id: string; name: string; doneDates: string[] };
@@ -48,7 +49,7 @@ export default function ReviewPage() {
   const maxCompleted = Math.max(1, ...completedBars);
 
   const overdue = tasks.filter(
-    (t) => t.date && new Date(`${t.date}T23:59:59`) < new Date() && t.status !== 'done'
+    (t) => t.date && isOverdue(new Date(t.date)) && t.status !== 'done'
   );
 
   const tagCounts: Record<string, number> = {};

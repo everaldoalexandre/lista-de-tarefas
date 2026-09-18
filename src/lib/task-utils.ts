@@ -26,6 +26,8 @@ function startOfDay(date: Date) {
 
 export function isOverdue(date: Date | null) {
   if (!date) return false;
+  // com hora marcada, vence no instante; sem hora, vence ao fim do dia local
+  if (hasTimeOfDay(date)) return date.getTime() < Date.now();
   return startOfDay(date).getTime() < startOfDay(new Date()).getTime();
 }
 
@@ -42,7 +44,22 @@ export function dueBadgeClass(date: Date | null) {
 }
 
 export function formatDueDate(date: Date) {
-  return date.toLocaleDateString('en-US');
+  if (!hasTimeOfDay(date)) return date.toLocaleDateString('en-US');
+  return date.toLocaleString('en-US', {
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+export function hasTimeOfDay(date: Date) {
+  return date.getHours() !== 0 || date.getMinutes() !== 0;
+}
+
+export function toTimeInputValue(date: Date | null) {
+  if (!date || !hasTimeOfDay(date)) return '';
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
 export function nextOccurrence(date: Date | null, recurrence: Recurrence) {

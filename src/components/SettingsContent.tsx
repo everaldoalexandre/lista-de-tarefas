@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import ChangePasswordForm from '@/components/ChangePasswordForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { buildCsvExport, buildJsonExport, type ExportTask } from '@/lib/export-utils';
 
 const themeOptions = [
   { value: 'light', label: 'Light', icon: Sun },
@@ -43,38 +44,32 @@ export default function SettingsContent() {
 
   async function exportData(format: 'json' | 'csv') {
     try {
-      const [projectsRes, tasksRes] = await Promise.all([
+      const [projectsRes, tasksRes, notesRes, habitsRes, timerRes] = await Promise.all([
         fetch('/api/projects'),
         fetch('/api/tasks?all=1'),
+        fetch('/api/notes'),
+        fetch('/api/habits'),
+        fetch('/api/timer'),
       ]);
 
-      if (!projectsRes.ok || !tasksRes.ok) throw new Error('export failed');
+      if (!projectsRes.ok || !tasksRes.ok || !notesRes.ok || !habitsRes.ok || !timerRes.ok) {
+        throw new Error('export failed');
+      }
 
       const projects = (await projectsRes.json()).projects ?? [];
       const tasks = (await tasksRes.json()).list ?? [];
+      const notes = (await notesRes.json()).notes ?? [];
+      const habits = (await habitsRes.json()).habits ?? [];
+      const focusLast7Days = await timerRes.json();
 
       let content: string;
       let filename: string;
 
       if (format === 'json') {
-        content = JSON.stringify({ exportedAt: new Date().toISOString(), projects, tasks }, null, 2);
+        content = buildJsonExport({ exportedAt: new Date().toISOString(), projects, tasks, notes, habits, focusLast7Days });
         filename = 'tasks-export.json';
       } else {
-        // prefixo ' neutraliza formula injection (=, +, -, @) em Excel/Sheets
-        const cell = (value: string) => {
-          const escaped = `"${value.replace(/"/g, '""')}"`;
-          return /^[=+\-@\t\r]/.test(escaped.replace(/^"/, '')) ? `'${escaped}` : escaped;
-        };
-        const header = 'description,status,date,project';
-        const rows = tasks.map((t: { description: string; status: string; date: string | null; project?: { name?: string } | null }) =>
-          [
-            cell(t.description),
-            t.status,
-            t.date ? new Date(t.date).toISOString().slice(0, 10) : '',
-            cell(t.project?.name ?? ''),
-          ].join(',')
-        );
-        content = [header, ...rows].join('\n');
+        content = buildCsvExport(tasks as ExportTask[]);
         filename = 'tasks-export.csv';
       }
 
@@ -143,8 +138,8 @@ export default function SettingsContent() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Your data</CardTitle>
-            <CardDescription>Download a copy of your projects and tasks.</CardDescription>
+              <CardTitle>Your data</CardTitle>
+              <CardDescription>Download a copy of your projects, tasks, notes, habits and focus hours (CSV covers tasks only).</CardDescription>
           </CardHeader>
           <CardContent className="flex gap-3">
             <Button

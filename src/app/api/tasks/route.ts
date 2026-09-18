@@ -271,6 +271,27 @@ export async function PUT(request: Request) {
 
     const body = await request.json();
 
+    // reorder nao usa id: vem antes da exigencia de ID
+    const reorderParsed = reorderSchema.safeParse(body);
+    if (reorderParsed.success) {
+      const ids = reorderParsed.data.order;
+      const ownedCount = await prisma.list.count({
+        where: { id: { in: ids }, userId: session.user.id },
+      });
+
+      if (ownedCount !== ids.length) {
+        return NextResponse.json({ error: "Task not found" }, { status: 404 });
+      }
+
+      await prisma.$transaction(
+        ids.map((id, index) =>
+          prisma.list.update({ where: { id }, data: { order: index } })
+        )
+      );
+
+      return NextResponse.json({ message: "Order updated successfully!" });
+    }
+
     const { id } = body;
 
     if (!id) {
@@ -293,26 +314,6 @@ export async function PUT(request: Request) {
         where: { id: String(id), userId: session.user.id, deletedAt: { not: null } },
       });
       return NextResponse.json({ message: "Task permanently deleted" });
-    }
-
-    const reorderParsed = reorderSchema.safeParse(body);
-    if (reorderParsed.success) {
-      const ids = reorderParsed.data.order;
-      const ownedCount = await prisma.list.count({
-        where: { id: { in: ids }, userId: session.user.id },
-      });
-
-      if (ownedCount !== ids.length) {
-        return NextResponse.json({ error: "Task not found" }, { status: 404 });
-      }
-
-      await prisma.$transaction(
-        ids.map((id, index) =>
-          prisma.list.update({ where: { id }, data: { order: index } })
-        )
-      );
-
-      return NextResponse.json({ message: "Order updated successfully!" });
     }
 
     const updateParsed = taskUpdateSchema.safeParse(body);
