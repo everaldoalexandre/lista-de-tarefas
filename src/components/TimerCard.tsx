@@ -10,6 +10,25 @@ export default function TimerCard({ projectId }: { projectId: string }) {
   const [secondsLeft, setSecondsLeft] = useState(FOCUS_SECONDS);
   const [running, setRunning] = useState(false);
   const endAtRef = useRef<number | null>(null);
+  const runningRef = useRef(false);
+  const secondsRef = useRef(FOCUS_SECONDS);
+
+  useEffect(() => {
+    runningRef.current = running;
+    secondsRef.current = secondsLeft;
+  }, [running, secondsLeft]);
+
+  // ao desmontar com o timer rodando, registra os minutos decorridos em vez de perde-los
+  useEffect(() => {
+    return () => {
+      if (!runningRef.current) return;
+      const elapsedMinutes = Math.floor((FOCUS_SECONDS - secondsRef.current) / 60);
+      if (elapsedMinutes >= 1) {
+        logMinutes(elapsedMinutes);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- cleanup de unmount usa refs
+  }, []);
 
   useEffect(() => {
     if (!running) return;
@@ -21,6 +40,7 @@ export default function TimerCard({ projectId }: { projectId: string }) {
         return;
       }
       clearInterval(interval);
+      runningRef.current = false;
       setRunning(false);
       setSecondsLeft(FOCUS_SECONDS);
       logMinutes(25);
@@ -46,6 +66,7 @@ export default function TimerCard({ projectId }: { projectId: string }) {
   }
 
   function stopAndLog() {
+    runningRef.current = false;
     setRunning(false);
     const elapsedMinutes = Math.floor((FOCUS_SECONDS - secondsLeft) / 60);
     if (elapsedMinutes >= 1) {

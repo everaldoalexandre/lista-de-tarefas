@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { GalleryVerticalEnd } from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
@@ -18,6 +18,16 @@ export function RegisterForm({
     const [password, setPassword] = useState('');
     const [passwordconfirmation, setPasswordConfirmation] = useState('');
     const [name, setName] = useState('');
+    const [googleEnabled, setGoogleEnabled] = useState(true);
+
+    useEffect(() => {
+        fetch('/api/config')
+            .then((r) => (r.ok ? r.json() : { googleEnabled: true }))
+            .then((data: { googleEnabled?: boolean }) => {
+                if (data.googleEnabled === false) setGoogleEnabled(false);
+            })
+            .catch(() => { });
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -123,6 +133,8 @@ export function RegisterForm({
                 </div>
             </div>
             </form>
+            {googleEnabled && (
+            <>
             <div className="flex items-center gap-3">
                 <span className="h-px flex-1 bg-border" />
                 <span className="text-xs text-muted-foreground">or</span>
@@ -145,6 +157,8 @@ export function RegisterForm({
                 </svg>
                 Continue with Google
             </Button>
+            </>
+            )}
         </div>
     )
 }

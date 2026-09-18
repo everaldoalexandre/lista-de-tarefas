@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { authClient } from "@/lib/auth-client"
 
@@ -15,6 +15,16 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [googleEnabled, setGoogleEnabled] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/config')
+      .then((r) => (r.ok ? r.json() : { googleEnabled: true }))
+      .then((data: { googleEnabled?: boolean }) => {
+        if (data.googleEnabled === false) setGoogleEnabled(false);
+      })
+      .catch(() => { });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -103,12 +113,14 @@ export function LoginForm({
           </div>
         </div>
       </form>
-      <div className="flex items-center gap-3">
-        <span className="h-px flex-1 bg-border" />
-        <span className="text-xs text-muted-foreground">or</span>
-        <span className="h-px flex-1 bg-border" />
-      </div>
-      <Button type="button" variant="outline" className="w-full" onClick={signInWithGoogle}>
+      {googleEnabled && (
+        <>
+          <div className="flex items-center gap-3">
+            <span className="h-px flex-1 bg-border" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+          <Button type="button" variant="outline" className="w-full" onClick={signInWithGoogle}>
         <svg className="size-4" viewBox="0 0 24 24" aria-hidden="true">
           <path fill="#4285F4" d="M23.5 12.3c0-.9-.1-1.5-.3-2.3H12v4.5h6.5c-.1 1.1-.8 2.7-2.4 3.8l-.1.1 3.5 2.7.2.1c2.2-2 3.8-5 3.8-8.9z" />
           <path fill="#34A853" d="M12 24c3.2 0 5.9-1.1 7.9-2.9l-3.8-2.9c-1 .7-2.4 1.2-4.1 1.2-3.1 0-5.8-2.1-6.8-5l-.1.1-3.6 2.8v.1C3.5 21.3 7.5 24 12 24z" />
@@ -117,6 +129,8 @@ export function LoginForm({
         </svg>
         Continue with Google
       </Button>
+        </>
+      )}
     </div>
   )
 }

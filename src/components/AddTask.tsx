@@ -4,10 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import { DeleteIcon, EditIcon, CalendarIcon, CopyIcon } from './Lucide';
 import { DragDropContext, Draggable, Droppable, DropResult } from '@hello-pangea/dnd'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import AddTaskForm from './AddTaskForm';
 import type { Task } from '@/type/type';
 import { toast } from "sonner"
-import { STATUS_COLUMNS, dueBadgeClass, formatDueDate, normalizeStatus, priorityStyles } from '@/lib/task-utils';
-import { parseTaskInput } from '@/lib/nlp-parse';
+import { STATUS_COLUMNS, dueBadgeClass, formatDueDate, normalizeStatus, priorityStyles, toTimeInputValue } from '@/lib/task-utils';
 
 function toDateInputValue(date: Date) {
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -18,27 +18,30 @@ function toDateInputValue(date: Date) {
 export default function AddTask({ query, projectId, readOnly, view = 'list', onTasksChanged }: { query: string; projectId?: string; readOnly?: boolean; view?: 'list' | 'board' | 'calendar'; onTasksChanged: () => void }) {
   const [list, setList] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [description, setDescription] = useState('');
-  const [date, setDate] = useState('');
-  const [recurrence, setRecurrence] = useState('none');
-  const [priority, setPriority] = useState('none');
-  const [tagsInput, setTagsInput] = useState('');
-  const [showDateInput, setShowDateInput] = useState(false);
   const [filterPriority, setFilterPriority] = useState<string | null>(null);
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [taskSelected, setTaskSelected] = useState<Task | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [monthOffset, setMonthOffset] = useState(0);
-  const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
   const [taskEdit, setTaskEdit] = useState<Task | null>(null);
   const [descriptionEdit, setDescriptionEdit] = useState('');
   const [dateEdit, setDateEdit] = useState('');
+  const [timeEdit, setTimeEdit] = useState('');
   const [priorityEdit, setPriorityEdit] = useState('none');
   const [recurrenceEdit, setRecurrenceEdit] = useState('none');
   const [tagsEdit, setTagsEdit] = useState('');
   const [projectEdit, setProjectEdit] = useState('');
   const [editProjects, setEditProjects] = useState<{ id: string; name: string }[]>([]);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const editInitialRef = useRef<{
+    description: string;
+    date: string;
+    time: string;
+    priority: string;
+    recurrence: string;
+    tags: string;
+    project: string;
+  } | null>(null);
   const editDescriptionRef = useRef<HTMLTextAreaElement>(null);
   const [subtasks, setSubtasks] = useState<{ id: string; description: string; done: boolean }[]>([]);
   const [newSubtask, setNewSubtask] = useState('');
@@ -49,13 +52,6 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
     el.style.height = 'auto';
     el.style.height = `${Math.max(Math.min(el.scrollHeight, 192), 64)}px`;
   }, [descriptionEdit, taskEdit]);
-
-  function autoResize() {
-    const el = descriptionRef.current;
-    if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = `${Math.max(el.scrollHeight, 64)}px`;
-  }
 
   useEffect(() => {
      
@@ -78,7 +74,7 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
         body: JSON.stringify({
           id: taskEdit.id,
           description: descriptionEdit.trim(),
-          date: dateEdit ? new Date(`${dateEdit}T00:00:00`).toISOString() : null,
+          date: dateEdit ? new Date(`${dateEdit}T${timeEdit || '00:00'}`).toISOString() : null,
           priority: priorityEdit === 'none' ? null : priorityEdit,
           recurrence: recurrenceEdit,
           tags: tagsEdit.split(',').map((t) => t.trim()).filter((t) => t.length >= 1 && t.length <= 24).slice(0, 10),
@@ -258,6 +254,36 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
     }
   }
 
+  async function clearCompleted() {
+    const ids = completed.map((t) => t.id);
+    if (ids.length === 0) return;
+
+    const previous = list;
+    setList(list.filter((t) => !ids.includes(t.id)));
+
+    try {
+      const results = await Promise.all(
+        ids.map((id) =>
+          fetch('/api/tasks', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id }),
+          })
+        )
+      );
+
+      if (results.some((r) => !r.ok)) throw new Error('clear failed');
+
+      toast.success('Completed tasks moved to trash!');
+      await toloadTask();
+      onTasksChanged();
+    } catch (error) {
+      console.error('Request error:', error);
+      toast.error('Could not clear completed tasks.');
+      setList(previous);
+    }
+  }
+
   async function toloadTask() {
     try {
       const tz = new Date().getTimezoneOffset();
@@ -281,76 +307,6 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
     }
   }
 
-  async function addTask(e: React.FormEvent) {
-    e.preventDefault();
-
-    if (!description.trim()) {
-      toast.error("Please fill in the task description.")
-      return;
-    }
-
-    if (submitting) return;
-
-    setSubmitting(true);
-
-    try {
-      const parsed = parseTaskInput(description);
-      const finalDescription = parsed.description || description.trim();
-      const parsedTags = Array.from(new Set([
-        ...(tagsInput.trim() ? tagsInput.split(',').map((t) => t.trim()).filter(Boolean) : []),
-        ...parsed.tags,
-      ])).slice(0, 10);
-
-      if (parsed.date || parsed.priority || parsed.tags.length > 0) {
-        toast.info('Detected from text: ' + [
-          parsed.date && `date ${parsed.date}`,
-          parsed.priority && `priority ${parsed.priority}`,
-          parsed.tags.length > 0 && `tags #${parsed.tags.join(' #')}`,
-        ].filter(Boolean).join(', '));
-      }
-
-      const response = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          newTask: {
-            description: finalDescription,
-            date: date
-              ? new Date(`${date}T00:00:00`).toISOString()
-              : parsed.date
-                ? new Date(`${parsed.date}T00:00:00`).toISOString()
-                : undefined,
-            projectId,
-            recurrence: recurrence !== 'none' ? recurrence : undefined,
-            priority: priority !== 'none' ? priority : parsed.priority,
-            tags: parsedTags.length > 0 ? parsedTags : undefined,
-          }
-        })
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        setDescription('');
-        setDate('');
-        setRecurrence('none');
-        setPriority('none');
-        setTagsInput('');
-        setShowDateInput(false);
-        if (descriptionRef.current) descriptionRef.current.style.height = 'auto';
-        await toloadTask();
-      } else {
-        toast.error(result.error || 'Error adding task. Please try again.');
-      }
-
-    } catch (error) {
-      console.error('Request error:', error);
-      toast.error('Connection error. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   function matchesFilters(t: Task) {
     if (filterPriority && t.priority !== filterPriority) return false;
     if (filterTag && !(t.tags ?? []).includes(filterTag)) return false;
@@ -369,16 +325,53 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
     setTaskEdit(task);
     setDescriptionEdit(task.description);
     setDateEdit(task.date ? toDateInputValue(task.date) : '');
+    setTimeEdit(task.date ? toTimeInputValue(task.date) : '');
     setPriorityEdit(task.priority ?? 'none');
     setRecurrenceEdit(task.recurrence ?? 'none');
     setTagsEdit((task.tags ?? []).join(', '));
     setProjectEdit(task.projectId ?? '');
+    editInitialRef.current = {
+      description: task.description,
+      date: task.date ? toDateInputValue(task.date) : '',
+      time: task.date ? toTimeInputValue(task.date) : '',
+      priority: task.priority ?? 'none',
+      recurrence: task.recurrence ?? 'none',
+      tags: (task.tags ?? []).join(', '),
+      project: task.projectId ?? '',
+    };
     setSubtasks(task.subtasks ?? []);
     setNewSubtask('');
     fetch('/api/projects')
       .then((r) => (r.ok ? r.json() : { projects: [] }))
       .then((data: { projects: { id: string; name: string }[] }) => setEditProjects(data.projects ?? []))
       .catch(() => setEditProjects([]));
+  }
+
+  function isEditDirty() {
+    const init = editInitialRef.current;
+    if (!taskEdit || !init) return false;
+    return (
+      descriptionEdit !== init.description ||
+      dateEdit !== init.date ||
+      timeEdit !== init.time ||
+      priorityEdit !== init.priority ||
+      recurrenceEdit !== init.recurrence ||
+      tagsEdit !== init.tags ||
+      projectEdit !== init.project
+    );
+  }
+
+  function requestCloseEdit() {
+    if (isEditDirty()) {
+      setShowDiscardConfirm(true);
+    } else {
+      setTaskEdit(null);
+    }
+  }
+
+  function discardEdit() {
+    setShowDiscardConfirm(false);
+    setTaskEdit(null);
   }
 
   async function addSubtask(e: React.FormEvent) {
@@ -677,7 +670,7 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
           </DialogContent>
         </Dialog>
 
-        <Dialog open={!!taskEdit} onOpenChange={(open) => !open && setTaskEdit(null)}>
+        <Dialog open={!!taskEdit} onOpenChange={(open) => !open && requestCloseEdit()}>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>Edit Task</DialogTitle>
@@ -690,8 +683,14 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
               rows={1}
               className="w-full min-h-[64px] max-h-48 text-foreground p-2 rounded-lg border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring resize-none overflow-hidden"
             />
-          <input type="date" value={dateEdit} onChange={(e) => setDateEdit(e.target.value)}
-            className="w-full text-foreground p-2 rounded-lg border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring" />
+          <div className="grid grid-cols-2 gap-2">
+            <input type="date" value={dateEdit} onChange={(e) => setDateEdit(e.target.value)}
+              aria-label="Due date"
+              className="w-full text-foreground p-2 rounded-lg border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring" />
+            <input type="time" value={timeEdit} onChange={(e) => setTimeEdit(e.target.value)}
+              aria-label="Due time"
+              className="w-full text-foreground p-2 rounded-lg border border-border bg-transparent outline-none focus:ring-2 focus:ring-ring" />
+          </div>
           <div className="grid grid-cols-2 gap-2">
             <select value={priorityEdit} onChange={(e) => setPriorityEdit(e.target.value)}
               aria-label="Priority"
@@ -741,9 +740,22 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
             </form>
           </div>
             <DialogFooter>
-              <button className="px-4 py-2 rounded-lg font-medium text-foreground bg-accent hover:bg-accent/80 transition-colors" onClick={() => setTaskEdit(null)}>Cancel</button>
+              <button className="px-4 py-2 rounded-lg font-medium text-foreground bg-accent hover:bg-accent/80 transition-colors" onClick={requestCloseEdit}>Cancel</button>
               <button className="px-4 py-2 rounded-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 onClick={async () => { const saved = await saveEdit(); if (saved) setTaskEdit(null); }}>Save</button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showDiscardConfirm} onOpenChange={setShowDiscardConfirm}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Discard changes?</DialogTitle>
+              <DialogDescription>Your edits to this task have not been saved yet.</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <button className="px-4 py-2 rounded-lg font-medium text-foreground bg-accent hover:bg-accent/80 transition-colors" onClick={() => setShowDiscardConfirm(false)}>Keep editing</button>
+              <button className="px-4 py-2 rounded-lg font-semibold bg-destructive text-white hover:bg-destructive/90 transition-colors" onClick={discardEdit}>Discard</button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -754,60 +766,7 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
   return (
     <div className="flex flex-col gap-4 p-4 min-h-[180px] w-full max-w-2xl">
       {!readOnly && projectId && (
-        <form onSubmit={addTask} className="flex flex-col gap-2 bg-card border border-border shadow-sm p-3 rounded-2xl w-full">
-          <div className="flex flex-col sm:flex-row gap-2 sm:items-start">
-            <textarea
-              ref={descriptionRef}
-              value={description}
-              onChange={(e) => {
-                setDescription(e.target.value);
-                autoResize();
-              }}
-              placeholder="Enter a new task"
-              rows={1}
-              style={{ minHeight: '64px' }}
-              className="p-2 rounded-lg flex-1 text-foreground placeholder:text-muted-foreground resize-none overflow-hidden bg-transparent outline-none"
-            />
-            <div className="flex gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowDateInput(!showDateInput)}
-                aria-expanded={showDateInput}
-                className={`p-2 rounded-xl shrink-0 transition-colors ${showDateInput ? 'bg-primary/15 text-primary' : 'bg-accent text-accent-foreground hover:bg-accent/80'}`}
-                title="Add date, repeat, priority and tags"
-                aria-label="More options"
-              >
-                <CalendarIcon />
-              </button>
-              <button type="submit" disabled={submitting} className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-xl shrink-0 disabled:opacity-50 font-bold transition-colors" aria-label="Add task">
-                +
-              </button>
-            </div>
-          </div>
-          {showDateInput && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)}
-                className="px-3 py-2 rounded-lg bg-accent text-foreground sm:w-40" aria-label="Due date" />
-              <select value={recurrence} onChange={(e) => setRecurrence(e.target.value)}
-                className="px-3 py-2 rounded-lg bg-accent text-foreground cursor-pointer" aria-label="Repeat">
-                <option value="none">Once</option>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-              </select>
-              <select value={priority} onChange={(e) => setPriority(e.target.value)}
-                className="px-3 py-2 rounded-lg bg-accent text-foreground capitalize cursor-pointer" aria-label="Priority">
-                <option value="none">No priority</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-              <input type="text" value={tagsInput} onChange={(e) => setTagsInput(e.target.value)}
-                placeholder="tags, comma separated" aria-label="Tags"
-                className="px-3 py-2 rounded-lg bg-accent text-foreground placeholder:text-muted-foreground flex-1 min-w-[10rem]" />
-            </div>
-          )}
-        </form>
+        <AddTaskForm projectId={projectId} onTaskAdded={toloadTask} />
       )}
 
       {list.length === 0 && (
@@ -860,6 +819,7 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
             readOnly={readOnly}
             onToggleTask={tomarkTask}
             renderActions={rowActions}
+            onClearCompleted={clearCompleted}
           />
         </div>
       )}
@@ -869,19 +829,45 @@ export default function AddTask({ query, projectId, readOnly, view = 'list', onT
   );
 }
 
-function CompletedSection({ count, tasks, readOnly, onToggleTask, renderActions }: { count: number; tasks: Task[]; readOnly?: boolean; onToggleTask: (task: Task) => void; renderActions: (task: Task) => React.ReactNode }) {
+function CompletedSection({ count, tasks, readOnly, onToggleTask, renderActions, onClearCompleted }: { count: number; tasks: Task[]; readOnly?: boolean; onToggleTask: (task: Task) => void; renderActions: (task: Task) => React.ReactNode; onClearCompleted: () => Promise<void> }) {
   const [open, setOpen] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearing, setClearing] = useState(false);
+
+  async function confirmClear() {
+    if (clearing) return;
+    setClearing(true);
+    try {
+      await onClearCompleted();
+    } finally {
+      setClearing(false);
+      setShowClearConfirm(false);
+    }
+  }
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-card border border-border shadow-sm text-foreground font-bold hover:bg-accent transition-colors"
-      >
-        <span>Completed ({count})</span>
-        <span>{open ? '−' : '+'}</span>
-      </button>
+      <div className="w-full flex items-center gap-2 px-4 py-3 rounded-2xl bg-card border border-border shadow-sm">
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          className="flex-1 flex items-center justify-between text-foreground font-bold hover:text-accent-foreground transition-colors text-left"
+        >
+          <span>Completed ({count})</span>
+          <span>{open ? '−' : '+'}</span>
+        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={() => setShowClearConfirm(true)}
+            title="Move all completed tasks to trash"
+            className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold text-muted-foreground hover:text-destructive hover:bg-accent transition-colors"
+          >
+            Clear
+          </button>
+        )}
+      </div>
       {open && (
         <ul className="flex flex-col gap-2 mt-2">
           {tasks.map((newTask) => (
@@ -895,6 +881,30 @@ function CompletedSection({ count, tasks, readOnly, onToggleTask, renderActions 
           ))}
         </ul>
       )}
+
+      <Dialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+        <DialogContent className="max-w-md">
+          <h2 className="text-lg text-foreground font-bold mb-2">Clear completed?</h2>
+          <p className="text-muted-foreground">
+            Move all {count} completed task{count === 1 ? '' : 's'} to the trash? You can restore them from there.
+          </p>
+          <div className="mt-2 flex justify-end gap-3">
+            <button
+              className="px-4 py-2 rounded-lg font-medium text-foreground bg-accent hover:bg-accent/80 transition-colors"
+              onClick={() => setShowClearConfirm(false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-4 py-2 rounded-lg font-semibold bg-destructive text-white hover:bg-destructive/90 transition-colors disabled:opacity-50"
+              onClick={confirmClear}
+              disabled={clearing}
+            >
+              {clearing ? 'Moving...' : 'Move to trash'}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
