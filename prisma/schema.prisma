@@ -19,6 +19,9 @@ model Project {
   userId    String    @db.Uuid
   list      List[]
   notes     Note[]
+  timeEntries TimeEntry[]
+
+  @@index([userId])
 }
 
 model List {
@@ -40,6 +43,8 @@ model List {
   projectId   String?   @db.Uuid
   subtasks    SubTask[]
   notes       Note[]
+
+  @@index([userId])
 }
 
 model SubTask {
@@ -58,9 +63,12 @@ model TimeEntry {
   minutes   Int
   date      DateTime @db.Date
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String   @db.Uuid
-  projectId String?  @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String    @db.Uuid
+  project   Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId String?   @db.Uuid
+
+  @@index([userId, date])
 }
 
 model User {
@@ -109,6 +117,8 @@ model Habit {
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String     @db.Uuid
   logs      HabitLog[]
+
+  @@index([userId])
 }
 
 model HabitLog {

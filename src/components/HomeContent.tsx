@@ -436,7 +436,7 @@ export default function HomeContent() {
       <Dialog open={showModalDelete} onOpenChange={setShowModalDelete}>
         <DialogContent className="max-w-md">
           <h2 className="text-lg text-foreground font-bold mb-2">Confirm deletion</h2>
-          <p className="text-muted-foreground">Are you sure you want to delete the project {selectedProject?.name}? Its tasks will also be deleted.</p>
+          <p className="text-muted-foreground">Are you sure you want to move the project {selectedProject?.name} to the trash? Its tasks will be hidden until you restore the project or delete it permanently from the trash.</p>
           <div className="mt-2 flex justify-end gap-3">
             <button
               className="px-4 py-2 rounded-lg font-medium text-foreground bg-accent hover:bg-accent/80 transition-colors"

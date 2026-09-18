@@ -55,12 +55,19 @@ export async function GET(request: Request) {
         { updatedAt: 'desc' },
       ],
       include: {
-        task: { select: { id: true, description: true } },
-        project: { select: { id: true, name: true } },
+        task: { select: { id: true, description: true, deletedAt: true } },
+        project: { select: { id: true, name: true, deletedAt: true } },
       }
     });
 
-    return NextResponse.json({ notes });
+    // vinculos na lixeira nao sao exibidos (o vinculo em si e preservado para edicao/restore)
+    const notesEnd = notes.map(({ task, project, ...note }) => ({
+      ...note,
+      task: task && !task.deletedAt ? { id: task.id, description: task.description } : null,
+      project: project && !project.deletedAt ? { id: project.id, name: project.name } : null,
+    }));
+
+    return NextResponse.json({ notes: notesEnd });
   } catch (error) {
     console.error('Error when searching for notes:', error);
     return NextResponse.json({ error: 'Error when searching for notes' }, { status: 500 });

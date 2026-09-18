@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma, isPrismaError } from "@/lib/prisma";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import { isCrossSite, crossSiteResponse } from "@/lib/http-guard";
 import { headers } from "next/headers";
@@ -109,11 +109,23 @@ export async function PUT(request: Request) {
     });
 
     if (existing) {
-      await prisma.habitLog.delete({ where: { id: existing.id } });
-    } else {
-      await prisma.habitLog.create({
-        data: { habitId: habit.id, date: logDate },
+      // deleteMany e idempotente:concorrentes que apagarem a mesma linha nao falham
+      await prisma.habitLog.deleteMany({
+        where: { habitId: habit.id, date: logDate },
       });
+    } else {
+      try {
+        await prisma.habitLog.create({
+          data: { habitId: habit.id, date: logDate },
+        });
+      } catch (error) {
+        // linha criada de forma concorrente apos o findUnique: o estado final
+        // (marcado) ja reflete a intencao do toggle, entao nao ha o que fazer
+        if (isPrismaError(error) && error.code === 'P2002') {
+          return NextResponse.json({ message: "Log updated" });
+        }
+        throw error;
+      }
     }
 
     return NextResponse.json({ message: "Log updated" });
