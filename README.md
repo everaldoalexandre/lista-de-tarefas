@@ -70,6 +70,16 @@ autorizado `https://seu-dominio.com/api/auth/callback/google`
 | `npm run build` | build de produção |
 | `npm run lint` | ESLint |
 | `npm test` | testes unitários (Vitest) |
+| `npm run audit` | auditoria de vulnerabilidades (npm audit, sem devDeps) |
+
+## Segurança
+
+- Relatório de auditoria em `docs/security-audit/relatorio-auditoria-seguranca.pdf`
+  (regenere com o script `docs/security-audit/gerar_relatorio.js`).
+- Dependabot configurado (`.github/dependabot.yml`, semanal) para acompanhar CVEs.
+- Verificação de e-mail no cadastro: pendente de provedor SMTP. Quando houver
+  (ex: Resend), ligue `requireEmailVerification` no better-auth e configure o
+  envio de e-mail de verificação.
 
 ## Deploy
 

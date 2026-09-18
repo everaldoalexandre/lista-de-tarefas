@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import { isCrossSite, crossSiteResponse } from "@/lib/http-guard";
 import { isDateOnlyString, parseTzParam, userDayKey } from "@/lib/date-utils";
+import { isUuid } from "@/lib/validation";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -16,6 +17,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const projectId = searchParams.get("projectId");
   const tz = parseTzParam(searchParams.get("tz")) ?? 0;
+
+  if (projectId && !isUuid(projectId)) {
+    return NextResponse.json({ error: "Invalid project" }, { status: 400 });
+  }
 
   const days: string[] = [];
   for (let i = 6; i >= 0; i--) {
@@ -50,8 +55,6 @@ export async function GET(request: Request) {
   return NextResponse.json({ byDay, weekTotal });
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 export async function POST(request: Request) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -78,7 +81,7 @@ export async function POST(request: Request) {
 
     let projectId: string | null = null;
     if (rawProjectId) {
-      if (!UUID_RE.test(rawProjectId)) {
+      if (!isUuid(rawProjectId)) {
         return NextResponse.json({ error: "Invalid project" }, { status: 400 });
       }
       const owned = await prisma.project.findFirst({

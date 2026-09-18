@@ -37,8 +37,14 @@ export const taskUpdateSchema = z
   .refine((v) => Object.keys(v).length > 1, { message: 'No fields to update' });
 
 export const reorderSchema = z.object({
-  order: z.array(z.string()).min(1),
+  order: z.array(z.string()).min(1).max(200),
 });
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isUuid(value: unknown): value is string {
+  return typeof value === 'string' && UUID_RE.test(value);
+}
 
 export const projectCreateSchema = z.object({
   name: z.string().trim().min(1).max(80),

@@ -43,11 +43,10 @@ export function RegisterForm({
 
             },
             onError(ctx) {
-                if (ctx?.error?.code?.includes('USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL')) {
-                    toast.error('This email is already registered. Try using another email.');
-                } else if (ctx?.error?.code?.includes('PASSWORD_TOO_SHORT')) {
+                if (ctx?.error?.code?.includes('PASSWORD_TOO_SHORT')) {
                     toast.error('Your password must be at least 8 characters long.');
                 } else {
+                    // mensagem generica de proposito: nao revelar se o e-mail ja tem conta (enumeracao)
                     toast.error('Failed to register. Please try again.');
                 }
             },

@@ -31,9 +31,14 @@ function sweep(now: number, windowMs: number) {
 }
 
 export function clientKey(request: Request, scope: string) {
+  // x-real-ip e definido pelo edge (Vercel) e e autoritativo; no X-Forwarded-For
+  // so a ultima entrada e confiavel (proxies acrescentam a direita, o cliente
+  // controla o prefixo esquerdo). Nunca usar a primeira entrada.
+  const forwarded = request.headers.get('x-forwarded-for');
+  const lastForwarded = forwarded?.split(',').map((s) => s.trim()).filter(Boolean).pop();
   const ip =
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    request.headers.get('x-real-ip') ??
+    request.headers.get('x-real-ip')?.trim() ||
+    lastForwarded ||
     'unknown';
   return `${scope}:${ip}`;
 }

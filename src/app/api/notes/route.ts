@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma, isPrismaError } from "@/lib/prisma";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import { isCrossSite, crossSiteResponse } from "@/lib/http-guard";
-import { noteCreateSchema, noteUpdateSchema } from "@/lib/validation";
+import { isUuid, noteCreateSchema, noteUpdateSchema } from "@/lib/validation";
 import { headers } from "next/headers";
 import { NextResponse } from 'next/server';
 
@@ -26,6 +26,14 @@ export async function GET(request: Request) {
     const taskId = searchParams.get("taskId");
     const projectId = searchParams.get("projectId");
     const q = searchParams.get("q");
+
+    if (taskId && !isUuid(taskId)) {
+      return NextResponse.json({ error: "Invalid task" }, { status: 400 });
+    }
+
+    if (projectId && !isUuid(projectId)) {
+      return NextResponse.json({ error: "Invalid project" }, { status: 400 });
+    }
 
     const notes = await prisma.note.findMany({
       where: {

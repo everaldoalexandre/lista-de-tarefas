@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
+  isUuid,
   noteCreateSchema,
   noteUpdateSchema,
   projectCreateSchema,
+  reorderSchema,
   taskCreateSchema,
   taskUpdateSchema,
 } from '@/lib/validation';
@@ -55,5 +57,24 @@ describe('noteUpdateSchema', () => {
   it('exige ao menos um campo além do id', () => {
     expect(noteUpdateSchema.safeParse({ id: 'abc' }).success).toBe(false);
     expect(noteUpdateSchema.safeParse({ id: 'abc', title: 'New' }).success).toBe(true);
+  });
+});
+
+describe('reorderSchema', () => {
+  it('limita o tamanho do array contra DoS', () => {
+    const ids = Array.from({ length: 200 }, (_, i) => `id-${i}`);
+    expect(reorderSchema.safeParse({ order: ids }).success).toBe(true);
+    expect(reorderSchema.safeParse({ order: [...ids, 'id-200'] }).success).toBe(false);
+    expect(reorderSchema.safeParse({ order: [] }).success).toBe(false);
+  });
+});
+
+describe('isUuid', () => {
+  it('aceita UUID valido e rejeita o resto', () => {
+    expect(isUuid('123e4567-e89b-12d3-a456-426614174000')).toBe(true);
+    expect(isUuid('not-a-uuid')).toBe(false);
+    expect(isUuid('')).toBe(false);
+    expect(isUuid(null)).toBe(false);
+    expect(isUuid(42)).toBe(false);
   });
 });

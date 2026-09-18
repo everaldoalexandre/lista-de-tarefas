@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma, isPrismaError } from "@/lib/prisma";
 import { clientKey, rateLimit } from "@/lib/rate-limit";
 import {
+  isUuid,
   reorderSchema,
   taskCreateSchema,
   taskUpdateSchema,
@@ -63,6 +64,10 @@ export async function GET(request: Request) {
     const all = searchParams.get("all") === "1";
     const trash = searchParams.get("trash") === "1";
     const tz = parseTzParam(searchParams.get("tz"));
+
+    if (projectId && !isUuid(projectId)) {
+      return NextResponse.json({ error: "Invalid project" }, { status: 400 });
+    }
 
     const where = {
       userId: session.user.id,

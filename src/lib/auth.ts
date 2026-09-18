@@ -3,17 +3,31 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/prisma";
 
+const secret = process.env.BETTER_AUTH_SECRET;
+
+if (!secret || secret.length < 32) {
+    throw new Error("BETTER_AUTH_SECRET must be set with at least 32 characters.");
+}
+
+const isProd = process.env.NODE_ENV === "production";
+
 export const auth = betterAuth({
-    secret: process.env.BETTER_AUTH_SECRET,
+    secret,
     databaseURL: process.env.DATABASE_URL,
 
     trustedOrigins: [
-        "http://localhost:3000",
+        ...(isProd ? [] : ["http://localhost:3000"]),
         "https://lista-de-tarefas-rho-smoky.vercel.app",
         ...(process.env.TRUSTED_ORIGINS
             ? process.env.TRUSTED_ORIGINS.split(",").map((origin) => origin.trim())
             : []),
     ],
+
+    rateLimit: {
+        enabled: true,
+        window: 60,
+        max: 20,
+    },
 
     database: prismaAdapter(prisma, {
         provider: 'postgresql',

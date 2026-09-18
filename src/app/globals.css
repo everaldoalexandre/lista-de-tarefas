@@ -119,6 +119,11 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* lista nativa do <select>: herda o texto claro mas abre com fundo branco do SO */
+  select option {
+    background-color: var(--card);
+    color: var(--foreground);
+  }
 }
 
 .dark {
