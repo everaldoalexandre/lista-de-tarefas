@@ -13,7 +13,7 @@ export const tagsSchema = z
 
 export const taskCreateSchema = z.object({
   newTask: z.object({
-    description: z.string().trim().min(1).max(500),
+    description: z.string().trim().min(1).max(2000),
     date: z.string().optional(),
     projectId: z.string().uuid().nullish(),
     recurrence: recurrenceEnum.optional(),
@@ -26,7 +26,7 @@ export const taskUpdateSchema = z
   .object({
     id: z.string(),
     status: statusEnum.optional(),
-    description: z.string().trim().min(1).max(500).optional(),
+    description: z.string().trim().min(1).max(2000).optional(),
     date: z.string().nullish(),
     projectId: z.string().uuid().nullish(),
     recurrence: recurrenceEnum.nullish(),

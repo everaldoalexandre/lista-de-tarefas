@@ -16,7 +16,8 @@ describe('taskCreateSchema', () => {
 
   it('rejeita descrição vazia e longa demais', () => {
     expect(taskCreateSchema.safeParse({ newTask: { description: '   ' } }).success).toBe(false);
-    expect(taskCreateSchema.safeParse({ newTask: { description: 'x'.repeat(501) } }).success).toBe(false);
+    expect(taskCreateSchema.safeParse({ newTask: { description: 'x'.repeat(2000) } }).success).toBe(true);
+    expect(taskCreateSchema.safeParse({ newTask: { description: 'x'.repeat(2001) } }).success).toBe(false);
   });
 
   it('rejeita projectId inválido', () => {
